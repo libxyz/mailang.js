@@ -632,7 +632,7 @@ export class ASTBuilder {
     if (ctx.children.expression) {
       const element = ctx.children.expression[0];
       if (isCstNode(element)) {
-        return this.visit(element);
+        return this.visitExpression(element);
       }
     }
 

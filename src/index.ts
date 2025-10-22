@@ -4,6 +4,35 @@ export * from './ast/ast-builder';
 export { parse } from './parser/parser';
 export { MaiLexer } from './lexer/tokens';
 
+// Simplified executor architecture (main export)
+// Be selective to avoid conflicts with legacy exports
+export {
+  // Core types and classes
+  ExecutionContext,
+  MarketData,
+  BuiltinFunction,
+  ExecutionResult,
+  ExecutionError,
+  MaiExecutor,
+  executeMai,
+  executeMaiSource,
+
+  // Functions
+  builtinFunctions,
+  builtinFunctionsMap,
+  allFunctions,
+  maFunction,
+  smaFunction,
+  emaFunction,
+  maxFunction,
+  minFunction,
+  sumFunction,
+  countFunction,
+  stddevFunction,
+  absFunction,
+  crossFunction,
+} from './executor';
+
 import { parse } from './parser/parser';
 import { buildAST } from './ast/ast-builder';
 import * as AST from './ast/types';
