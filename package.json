@@ -1,0 +1,40 @@
+{
+  "name": "mai-lang-parser",
+  "version": "0.1.0",
+  "description": "Mai language AST parser using Chevrotain",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "clean": "rm -rf dist",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\" \"**/*.{md,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"**/*.{md,json}\"",
+    "format:staged": "prettier --write"
+  },
+  "keywords": [
+    "mai",
+    "parser",
+    "ast",
+    "chevrotain",
+    "language"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chevrotain": "^10.5.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^20.0.0",
+    "@types/prettier": "^2.7.3",
+    "jest": "^29.0.0",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}
