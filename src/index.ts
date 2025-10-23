@@ -1,17 +1,3 @@
-export { MaiLexer } from './lexer/tokens';
-
-// Simplified executor architecture (main export)
-// Be selective to avoid conflicts with legacy exports
-export {
-  // Core types and classes
-  ExecCtx as ExecutionContext,
-  MarketData,
-  ExecFunc as BuiltinFunction,
-  ExecutionResult,
-  ExecutionError,
-  MaiExecutor,
-} from './executor';
-
 import { parse } from './parser/parser';
 import { buildAST } from './ast/ast-builder';
 import * as AST from './ast/types';
@@ -25,3 +11,9 @@ export function parseMai(sourceCode: string): ParseResult {
   const ast = buildAST(cst);
   return { ast };
 }
+
+export {
+  ExecutionResult,
+  ExecutionError,
+  MaiVM as MaiExecutor, // Now uses IR internally for backward compatibility
+} from './interpreter';

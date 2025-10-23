@@ -1,4 +1,4 @@
-import { ExecFunc, ExecCtx } from './core';
+import { ExecFunc, ExecCtx } from '../utils';
 import { StatsRingBuf } from '../utils/ring-buffer';
 import typia from 'typia';
 
@@ -57,4 +57,4 @@ F('MAX', args => Math.max(...args), opts);
 F('MIN', args => Math.min(...args), opts);
 F('SUM', args => args.reduce((acc, val) => acc + val, 0), opts);
 
-export const functionStore = registry;
+export const funcRegistry = registry;

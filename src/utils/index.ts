@@ -1,1 +1,2 @@
-export { RingBuf as RingBuffer } from './ring-buffer';
+// Re-export execution context utilities from interpreter/core
+export { ExecCtx, ExecFunc, getVar } from '../interpreter/core';

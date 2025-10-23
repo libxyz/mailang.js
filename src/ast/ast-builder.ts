@@ -221,73 +221,23 @@ export class ASTBuilder {
     return variables;
   }
 
-  public visitIfStatement(ctx: CstNode): AST.IfStatement {
-    const testElement = ctx.children.expression![0];
-    if (!isCstNode(testElement)) throw new Error('Expected CST node');
-    const test = this.visitExpression(testElement);
+  public visitIfStatement(ctx: any): AST.IfStatement {
+    // 1️⃣ 条件
+    const condCst = ctx.children?.expression?.[0];
+    const test = this.visitExpression(condCst);
 
-    // Extract statements for consequent (between THEN and END/ELSE)
-    const statements = ctx.children.statement || [];
-    let consequent: AST.BlockStatement;
+    // 2️⃣ THEN 分支：一定存在 blockStatement[0]
+    const consequent = this.visitBlockStatement(ctx.children?.blockStatement?.[0]);
 
-    if (statements.length === 1) {
-      // Single statement case
-      const stmtElement = statements[0];
-      if (!isCstNode(stmtElement)) throw new Error('Expected statement');
-      const stmt = this.visitStatement(stmtElement);
-      consequent = {
-        type: ASTNodeType.BlockStatement,
-        body: [stmt],
-        loc: getNodeLocation(ctx),
-      };
-    } else if (statements.length > 1) {
-      // Multiple statements case - need to determine which are consequent vs alternate
-      let consequentEnd = statements.length;
-      if (ctx.children.ELSE) {
-        // Split statements between consequent and alternate
-        consequentEnd = Math.floor(statements.length / 2);
-      }
+    // 3️⃣ ELSE 分支：可能是 block 或 if
+    let alternate: AST.Statement | undefined = undefined;
 
-      const consequentStatements = statements.slice(0, consequentEnd).map((stmt: CstElement) => {
-        if (!isCstNode(stmt)) throw new Error('Expected statement');
-        return this.visitStatement(stmt);
-      });
-
-      consequent = {
-        type: ASTNodeType.BlockStatement,
-        body: consequentStatements,
-        loc: getNodeLocation(ctx),
-      };
-    } else {
-      // No statements
-      consequent = {
-        type: ASTNodeType.BlockStatement,
-        body: [],
-        loc: getNodeLocation(ctx),
-      };
-    }
-
-    let alternate: AST.Statement | undefined;
-    if (ctx.children.ELSE) {
-      // Extract statements for alternate (after ELSE)
-      let alternateStatements: AST.Statement[];
-
-      if (statements.length > 1) {
-        const alternateStart = Math.floor(statements.length / 2);
-        alternateStatements = statements.slice(alternateStart).map((stmt: CstElement) => {
-          if (!isCstNode(stmt)) throw new Error('Expected statement');
-          return this.visitStatement(stmt);
-        });
-      } else {
-        // If there's an ELSE but only one statement, this might be an error in grammar
-        alternateStatements = [];
-      }
-
-      alternate = {
-        type: ASTNodeType.BlockStatement,
-        body: alternateStatements,
-        loc: getNodeLocation(ctx),
-      };
+    if (ctx.children?.ifStatement?.[0]) {
+      // else if 分支
+      alternate = this.visitIfStatement(ctx.children.ifStatement[0]);
+    } else if (ctx.children?.blockStatement?.[1]) {
+      // else block 分支
+      alternate = this.visitBlockStatement(ctx.children.blockStatement[1]);
     }
 
     return {
@@ -343,7 +293,7 @@ export class ASTBuilder {
   }
 
   public visitExpression(ctx: CstNode): AST.Expression {
-    const exprElement = ctx.children.assignmentExpression![0];
+    const exprElement = ctx.children?.assignmentExpression?.[0];
     if (!isCstNode(exprElement)) throw new Error('Expected CST node');
     return this.visitAssignmentExpression(exprElement);
   }

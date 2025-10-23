@@ -1,42 +1,39 @@
-import { CstParser, IToken, CstNode, tokenMatcher, Lexer } from 'chevrotain';
+import { CstNode, CstParser, IToken } from 'chevrotain';
 
 import {
   allTokens,
-  MaiLexer,
-  NumberLiteral,
-  StringLiteral,
-  Identifier,
-  VARIABLE,
-  IF,
-  THEN,
-  ELSE,
+  Assign,
   BEGIN,
-  END,
-  RETURN,
-  Multiply,
+  Comma,
+  DisplayAssign,
   Divide,
-  Plus,
-  Minus,
-  GreaterThan,
-  LessThan,
-  GreaterThanOrEqual,
-  LessThanOrEqual,
-  NotEqual,
+  Dot,
+  ELSE,
+  END,
   Equal,
+  GreaterThan,
+  GreaterThanOrEqual,
+  Identifier,
+  IF,
+  LessThan,
+  LessThanOrEqual,
   LogicalAnd,
   LogicalOr,
-  Assign,
-  DisplayAssign,
+  LParen,
+  MaiLexer,
+  Minus,
+  Multiply,
+  NotEqual,
+  NumberLiteral,
+  Plus,
   PowerAssign,
   RangeOperator,
-  Semicolon,
-  Comma,
-  Colon,
-  LParen,
+  RETURN,
   RParen,
-  LBracket,
-  RBracket,
-  Dot,
+  Semicolon,
+  StringLiteral,
+  THEN,
+  VARIABLE,
 } from '../lexer/tokens';
 
 // Parser rule names
@@ -130,18 +127,12 @@ class MaiParser extends CstParser {
     this.CONSUME(IF);
     this.SUBRULE(this.expression);
     this.CONSUME(THEN);
-    this.CONSUME(BEGIN);
-    this.MANY(() => {
-      this.SUBRULE(this.statement);
-    });
-    this.CONSUME(END);
+
+    this.SUBRULE(this.blockStatement);
+
     this.OPTION(() => {
       this.CONSUME(ELSE);
-      this.CONSUME2(BEGIN);
-      this.MANY2(() => {
-        this.SUBRULE2(this.statement);
-      });
-      this.CONSUME2(END);
+      this.OR([{ ALT: () => this.SUBRULE(this.ifStatement) }, { ALT: () => this.SUBRULE2(this.blockStatement) }]);
     });
   });
 
@@ -151,6 +142,9 @@ class MaiParser extends CstParser {
       this.SUBRULE(this.statement);
     });
     this.CONSUME(END);
+    this.OPTION(() => {
+      this.CONSUME(Semicolon);
+    });
   });
 
   public returnStatement = this.RULE(RULE_NAMES.returnStatement, () => {

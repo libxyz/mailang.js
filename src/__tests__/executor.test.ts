@@ -1,4 +1,4 @@
-import { executeMaiSource, MaiExecutor, MarketData } from '../executor';
+import { executeMai, MaiVM, MarketData } from '../interpreter';
 
 describe('Mai Executor', () => {
   const sampleMarketData: MarketData = {
@@ -10,146 +10,146 @@ describe('Mai Executor', () => {
 
   describe('Basic Expression Evaluation', () => {
     test('should evaluate number literals', () => {
-      const result = executeMaiSource('42;', sampleMarketData);
+      const result = executeMai('42;', sampleMarketData);
       expect(result.output).toEqual({});
       expect(result.lastResult).toBe(42);
     });
 
     test('should evaluate string literals', () => {
-      const result = executeMaiSource('"hello world";', sampleMarketData);
+      const result = executeMai('"hello world";', sampleMarketData);
       expect(result.output).toEqual({});
     });
 
     test('should evaluate market data keywords', () => {
-      const result = executeMaiSource('O; H; L; C;', sampleMarketData);
+      const result = executeMai('O; H; L; C;', sampleMarketData);
       expect(result.lastResult).toBe(102); // C is the last expression
     });
 
     test('should evaluate arithmetic expressions', () => {
-      const result = executeMaiSource('2 + 3 * 4;', sampleMarketData);
+      const result = executeMai('2 + 3 * 4;', sampleMarketData);
       expect(result.lastResult).toBe(14); // 2 + (3 * 4)
     });
 
     test('should evaluate division with proper precedence', () => {
-      const result = executeMaiSource('10 / 2 + 3;', sampleMarketData);
+      const result = executeMai('10 / 2 + 3;', sampleMarketData);
       expect(result.lastResult).toBe(8); // (10 / 2) + 3
     });
 
     test('should handle division by zero', () => {
       expect(() => {
-        executeMaiSource('10 / 0;', sampleMarketData);
+        executeMai('10 / 0;', sampleMarketData);
       }).toThrow('Division by zero');
     });
 
     test('should evaluate unary operators', () => {
-      const result = executeMaiSource('-5; +3;', sampleMarketData);
+      const result = executeMai('-5; +3;', sampleMarketData);
       expect(result.lastResult).toBe(3);
     });
 
     test('should evaluate relational expressions', () => {
-      const result1 = executeMaiSource('5 > 3;', sampleMarketData);
+      const result1 = executeMai('5 > 3;', sampleMarketData);
       expect(result1.lastResult).toBe(true);
 
-      const result2 = executeMaiSource('5 < 3;', sampleMarketData);
+      const result2 = executeMai('5 < 3;', sampleMarketData);
       expect(result2.lastResult).toBe(false);
 
-      const result3 = executeMaiSource('5 >= 5;', sampleMarketData);
+      const result3 = executeMai('5 >= 5;', sampleMarketData);
       expect(result3.lastResult).toBe(true);
 
-      const result4 = executeMaiSource('5 <> 3;', sampleMarketData);
+      const result4 = executeMai('5 <> 3;', sampleMarketData);
       expect(result4.lastResult).toBe(true);
     });
 
     test('should evaluate logical expressions', () => {
       // Note: Boolean literals like 'true' and 'false' are not directly supported
       // We'll use numeric comparisons to test logical operators
-      const result1 = executeMaiSource('1 > 0 && 0 > 1;', sampleMarketData);
+      const result1 = executeMai('1 > 0 && 0 > 1;', sampleMarketData);
       expect(result1.lastResult).toBe(false);
 
-      const result2 = executeMaiSource('1 > 0 || 0 > 1;', sampleMarketData);
+      const result2 = executeMai('1 > 0 || 0 > 1;', sampleMarketData);
       expect(result2.lastResult).toBe(true);
 
-      const result3 = executeMaiSource('1 && 0;', sampleMarketData);
+      const result3 = executeMai('1 && 0;', sampleMarketData);
       expect(result3.lastResult).toBe(false);
 
-      const result4 = executeMaiSource('1 || 0;', sampleMarketData);
+      const result4 = executeMai('1 || 0;', sampleMarketData);
       expect(result4.lastResult).toBe(true);
     });
 
     test('should handle truthy/falsy values correctly', () => {
-      const result1 = executeMaiSource('0 || 5;', sampleMarketData);
+      const result1 = executeMai('0 || 5;', sampleMarketData);
       expect(result1.lastResult).toBe(true); // 0 is falsy, 5 is truthy
 
-      const result2 = executeMaiSource('0 && 5;', sampleMarketData);
+      const result2 = executeMai('0 && 5;', sampleMarketData);
       expect(result2.lastResult).toBe(false); // 0 is falsy
     });
   });
 
   describe('Variable Declarations and Assignments', () => {
     test('should declare variables', () => {
-      const result = executeMaiSource('VARIABLE: x, y, z;', sampleMarketData);
+      const result = executeMai('VARIABLE: x, y, z;', sampleMarketData);
       expect(result.vars.get('x')).toBeUndefined();
       expect(result.vars.get('y')).toBeUndefined();
       expect(result.vars.get('z')).toBeUndefined();
     });
 
     test('should declare variables with initialization', () => {
-      const result = executeMaiSource('VARIABLE: x := 5, y := 10;', sampleMarketData);
+      const result = executeMai('VARIABLE: x := 5, y := 10;', sampleMarketData);
       expect(result.globalVars.get('x')).toBe(5);
       expect(result.globalVars.get('y')).toBe(10);
     });
 
     test('should handle regular assignment', () => {
-      const result = executeMaiSource('x := 42;', sampleMarketData);
+      const result = executeMai('x := 42;', sampleMarketData);
       expect(result.vars.get('x')).toBe(42);
     });
 
     test('should handle display assignment', () => {
-      const result = executeMaiSource('x : 42;', sampleMarketData);
+      const result = executeMai('x : 42;', sampleMarketData);
       expect(result.vars.get('x')).toBe(42);
       expect(result.output.x).toBe(42);
     });
 
     test('should handle power assignment', () => {
       expect(() => {
-        executeMaiSource('x := 2; x ^^ 3;', sampleMarketData);
+        executeMai('x := 2; x ^^ 3;', sampleMarketData);
       }).toThrow('Unknown operator: ^^');
     });
 
     test('should handle range operator', () => {
       expect(() => {
-        executeMaiSource('x := 1..5;', sampleMarketData);
+        executeMai('x := 1..5;', sampleMarketData);
       }).toThrow('Left side of assignment must be an identifier');
     });
 
     test('should handle reverse range operator', () => {
       expect(() => {
-        executeMaiSource('x := 5..1;', sampleMarketData);
+        executeMai('x := 5..1;', sampleMarketData);
       }).toThrow('Left side of assignment must be an identifier');
     });
 
     test('should handle range operator in expressions', () => {
       expect(() => {
-        executeMaiSource('result := 1..3;', sampleMarketData);
+        executeMai('result := 1..3;', sampleMarketData);
       }).toThrow('Left side of assignment must be an identifier');
     });
 
     test('should reference variables in expressions', () => {
-      const result = executeMaiSource('x := 10; y := x + 5;', sampleMarketData);
+      const result = executeMai('x := 10; y := x + 5;', sampleMarketData);
       expect(result.vars.get('x')).toBe(10);
       expect(result.vars.get('y')).toBe(15);
     });
 
     test('should throw error for undefined variables', () => {
       expect(() => {
-        executeMaiSource('undefined_var + 5;', sampleMarketData);
+        executeMai('undefined_var + 5;', sampleMarketData);
       }).toThrow('Variable "undefined_var" is not defined');
     });
   });
 
   describe('Control Flow', () => {
     test('should execute if statement (true condition)', () => {
-      const result = executeMaiSource(
+      const result = executeMai(
         `
         x := 0;
         IF 5 > 3 THEN BEGIN
@@ -162,7 +162,7 @@ describe('Mai Executor', () => {
     });
 
     test('should execute if statement (false condition)', () => {
-      const result = executeMaiSource(
+      const result = executeMai(
         `
         x := 0;
         IF 3 > 5 THEN BEGIN
@@ -175,7 +175,7 @@ describe('Mai Executor', () => {
     });
 
     test('should execute if-else statement', () => {
-      const result1 = executeMaiSource(
+      const result1 = executeMai(
         `
         IF 5 > 3 THEN BEGIN
           x := 1;
@@ -187,7 +187,7 @@ describe('Mai Executor', () => {
       );
       expect(result1.vars.get('x')).toBe(1);
 
-      const result2 = executeMaiSource(
+      const result2 = executeMai(
         `
         IF 3 > 5 THEN BEGIN
           x := 1;
@@ -201,7 +201,7 @@ describe('Mai Executor', () => {
     });
 
     test('should execute nested if statements', () => {
-      const result = executeMaiSource(
+      const result = executeMai(
         `
         IF 5 > 3 THEN BEGIN
           IF 10 > 5 THEN BEGIN
@@ -219,13 +219,13 @@ describe('Mai Executor', () => {
     });
 
     test('should execute return statement', () => {
-      const result = executeMaiSource('RETURN 42;', sampleMarketData);
-      expect(result.returnValue).toBe(42);
+      const result = executeMai('RETURN 42;', sampleMarketData);
+      expect(result.lastResult).toBe(42);
     });
 
     test('should execute return statement without argument', () => {
-      const result = executeMaiSource('RETURN;', sampleMarketData);
-      expect(result.returnValue).toBeUndefined();
+      const result = executeMai('RETURN;', sampleMarketData);
+      expect(result.lastResult).toBeUndefined();
     });
   });
 
@@ -233,17 +233,17 @@ describe('Mai Executor', () => {
     test('should execute MA function', () => {
       // For now, we'll use a different approach since array literals aren't supported
       // This will be a placeholder test until we add array literal support
-      const result = executeMaiSource('result := MAX(1, 5, 3, 9, 2);', sampleMarketData);
+      const result = executeMai('result := MAX(1, 5, 3, 9, 2);', sampleMarketData);
       expect(result.vars.get('result')).toBe(9);
     });
 
     test('should execute MAX function with multiple arguments', () => {
-      const result = executeMaiSource('result := MAX(1, 5, 3, 9, 2);', sampleMarketData);
+      const result = executeMai('result := MAX(1, 5, 3, 9, 2);', sampleMarketData);
       expect(result.vars.get('result')).toBe(9);
     });
 
     test('should execute MIN function', () => {
-      const result = executeMaiSource('result := MIN(1, 5, 3, 9, 2);', sampleMarketData);
+      const result = executeMai('result := MIN(1, 5, 3, 9, 2);', sampleMarketData);
       expect(result.vars.get('result')).toBe(1);
     });
 
@@ -253,14 +253,14 @@ describe('Mai Executor', () => {
     test('should handle function errors', () => {
       // Test with invalid arguments
       expect(() => {
-        executeMaiSource('result := MA(1, 2, 3);', sampleMarketData);
+        executeMai('result := MA(1, 2, 3);', sampleMarketData);
       }).toThrow('[number, number]');
     });
   });
 
   describe('Complex Examples', () => {
     test('should execute technical indicator logic', () => {
-      const result = executeMaiSource(
+      const result = executeMai(
         `
         // Simple technical analysis logic without arrays
         current_price := C;
@@ -288,7 +288,7 @@ describe('Mai Executor', () => {
     });
 
     test('should execute trading strategy logic', () => {
-      const result = executeMaiSource(
+      const result = executeMai(
         `
         open_price := O;
         close_price := C;
@@ -321,32 +321,32 @@ describe('Mai Executor', () => {
   describe('Error Handling', () => {
     test('should handle type errors in arithmetic operations', () => {
       expect(() => {
-        executeMaiSource('"hello" + 5;', sampleMarketData);
+        executeMai('"hello" + 5;', sampleMarketData);
       }).toThrow('Expected number, got string');
     });
 
     test('should handle invalid function calls', () => {
       expect(() => {
-        executeMaiSource('result := nonexistent_func(1, 2);', sampleMarketData);
+        executeMai('result := nonexistent_func(1, 2);', sampleMarketData);
       }).toThrow('Cannot call non-function');
     });
 
     test('should handle invalid assignments', () => {
       expect(() => {
-        executeMaiSource('5 := 10;', sampleMarketData);
+        executeMai('5 := 10;', sampleMarketData);
       }).toThrow('Left side of assignment must be an identifier');
     });
 
     test('should handle invalid member access', () => {
       expect(() => {
-        executeMaiSource('5.property;', sampleMarketData);
+        executeMai('5.property;', sampleMarketData);
       }).toThrow('Cannot access property');
     });
   });
 
   describe('Market Data Integration', () => {
     test('should use market data in calculations', () => {
-      const result = executeMaiSource(
+      const result = executeMai(
         `
         price_range := H - L;
         price_change := C - O;
@@ -368,7 +368,7 @@ describe('Mai Executor', () => {
         C: 53,
       };
 
-      const result = executeMaiSource('price_range := H - L;', customMarketData);
+      const result = executeMai('price_range := H - L;', customMarketData);
       expect(result.vars.get('price_range')).toBe(7); // 55 - 48
     });
   });
@@ -376,12 +376,14 @@ describe('Mai Executor', () => {
   describe('Global Variables', () => {
     test('should declare global variables', () => {
       const src = `VARIABLE: x := 0; x := x + 1;`;
-      const executor = new MaiExecutor(src);
-      let result = executor.push(sampleMarketData);
+      const executor = new MaiVM(src);
+      let result = executor.execute(sampleMarketData);
       expect(result.globalVars.get('x')).toBe(1);
 
-      result = executor.push(sampleMarketData);
-      expect(result.globalVars.get('x')).toBe(2);
+      // Note: In the current IR implementation, VARIABLE declarations skip initialization on subsequent rounds
+      // This means x persists from the previous execution (value 1) and gets incremented again
+      result = executor.execute(sampleMarketData);
+      expect(result.globalVars.get('x')).toBe(2); // x persists as 1, then gets incremented to 2
     });
   });
 });

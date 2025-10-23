@@ -27,10 +27,6 @@ export class MaiError extends Error {
     this.location = location;
     this.context = context;
 
-    // 保持堆栈跟踪
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, MaiError);
-    }
   }
 
   toString(): string {
@@ -56,9 +52,8 @@ export class MaiError extends Error {
     return result;
   }
 
-  toJSON(): object {
+  toJSON() {
     return {
-      name: this.name,
       type: this.type,
       message: this.message,
       location: this.location,
@@ -66,4 +61,13 @@ export class MaiError extends Error {
       stack: this.stack,
     };
   }
+}
+
+export function newError(
+  type: ErrorType,
+  message: string,
+  location?: AST.SourceLocation,
+  context?: Record<string, any>
+): MaiError {
+  return new MaiError(type, message, location, context);
 }
