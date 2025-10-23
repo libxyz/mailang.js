@@ -6,10 +6,6 @@ import {
   NumberLiteral,
   StringLiteral,
   Identifier,
-  O,
-  H,
-  L,
-  C,
   VARIABLE,
   IF,
   THEN,
@@ -106,10 +102,7 @@ class MaiParser extends CstParser {
   });
 
   public noSemicolonStatement = this.RULE(RULE_NAMES.noSemicolonStatement, () => {
-    this.OR([
-      { ALT: () => this.SUBRULE(this.ifStatement) },
-      { ALT: () => this.SUBRULE(this.blockStatement) },
-    ]);
+    this.OR([{ ALT: () => this.SUBRULE(this.ifStatement) }, { ALT: () => this.SUBRULE(this.blockStatement) }]);
   });
 
   public variableDeclaration = this.RULE(RULE_NAMES.variableDeclaration, () => {
@@ -257,10 +250,7 @@ class MaiParser extends CstParser {
   public postfixExpression = this.RULE(RULE_NAMES.postfixExpression, () => {
     this.SUBRULE(this.primaryExpression);
     this.MANY(() => {
-      this.OR([
-        { ALT: () => this.SUBRULE(this.callExpression) },
-        { ALT: () => this.SUBRULE(this.memberExpression) },
-      ]);
+      this.OR([{ ALT: () => this.SUBRULE(this.callExpression) }, { ALT: () => this.SUBRULE(this.memberExpression) }]);
     });
   });
 
@@ -269,10 +259,6 @@ class MaiParser extends CstParser {
       { ALT: () => this.CONSUME(NumberLiteral) },
       { ALT: () => this.CONSUME(StringLiteral) },
       { ALT: () => this.CONSUME(Identifier) },
-      { ALT: () => this.CONSUME(O) },
-      { ALT: () => this.CONSUME(H) },
-      { ALT: () => this.CONSUME(L) },
-      { ALT: () => this.CONSUME(C) },
       {
         ALT: () => {
           this.CONSUME(LParen);
@@ -338,19 +324,18 @@ export function parse(inputText: string) {
   const lexResult = MaiLexer.tokenize(inputText);
 
   if (lexResult.errors.length > 0) {
-    throw new Error('Lexing errors: ' + lexResult.errors.map(e => e.message).join(', '));
+    throw new Error('[LexingErr] ' + lexResult.errors.map(e => e.message).join(', '));
   }
 
   parser.input = lexResult.tokens;
   const cst = parser.program();
 
   if (parser.errors.length > 0) {
-    throw new Error('Parsing errors: ' + parser.errors.map(e => e.message).join(', '));
+    throw new Error('[ParsingErr] ' + parser.errors.map(e => e.message).join(', '));
   }
 
   return {
     cst,
     lexResult,
-    parserErrors: parser.errors,
   };
 }

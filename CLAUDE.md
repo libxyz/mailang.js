@@ -35,18 +35,21 @@ npm run clean
 ## Architecture
 
 ### Parser Pipeline
+
 1. **Lexical Analysis** (`src/lexer/tokens.ts`) - Tokenizes input using Chevrotain token definitions
 2. **Parsing** (`src/parser/parser.ts`) - Creates Concrete Syntax Tree (CST) using Chevrotain grammar rules
 3. **AST Building** (`src/ast/ast-builder.ts`) - Converts CST to typed AST nodes
 4. **Public API** (`src/index.ts`) - Exports `parseMai()` function with error handling
 
 ### Execution Engine (`src/executor/`)
+
 1. **Executor** (`executor.ts`) - Main execution engine that evaluates AST nodes
 2. **Built-in Functions** (`builtin-functions.ts`) - Financial analysis functions
 3. **Types** (`types.ts`) - Execution context and result types
 4. **Market Data Support** - Built-in support for O, H, L, C (Open, High, Low, Close) price data
 
 Key architectural decisions:
+
 - Uses Chevrotain for parser generation (not a hand-written recursive descent parser)
 - Maintains strict separation between CST (Chevrotain's output) and AST (our typed representation)
 - All AST nodes are defined in `src/ast/types.ts` with corresponding enums in `src/ast/enums.ts`
@@ -56,7 +59,9 @@ Key architectural decisions:
 ## Mai Language Features
 
 ### Parser Features
+
 **Operator Precedence** (highest to lowest):
+
 1. Multiplicative: `*`, `/`
 2. Additive: `+`, `-`
 3. Relational: `>`, `<`, `>=`, `<=`, `<>`, `=`
@@ -64,6 +69,7 @@ Key architectural decisions:
 5. Logical OR: `||`
 
 **Special Assignment Operators**:
+
 - `:=` - Regular assignment
 - `:` - Display assignment (outputs value)
 - `^^` - Power assignment
@@ -74,6 +80,7 @@ Key architectural decisions:
 **Control Flow**: `IF`/`THEN`/`ELSE` with `BEGIN`/`END` blocks
 
 ### Execution Engine Features
+
 - **Expression Evaluation**: Supports all parser expressions with proper type checking
 - **Variable Management**: Scoped variable storage with assignment operators
 - **Control Flow**: Full support for IF/THEN/ELSE statements
@@ -84,6 +91,7 @@ Key architectural decisions:
 ## Usage Examples
 
 ### Basic Parsing
+
 ```typescript
 import { parseMai } from 'mai-lang-parser';
 
@@ -94,6 +102,7 @@ if (result.errors.length === 0) {
 ```
 
 ### Execution with Market Data
+
 ```typescript
 import { executeMaiSource } from 'mai-lang-parser';
 
@@ -110,6 +119,7 @@ console.log('Output:', result.output);
 ```
 
 ### Custom Execution Context
+
 ```typescript
 import { MaiExecutor, MarketData } from 'mai-lang-parser';
 
@@ -128,10 +138,12 @@ console.log('Execution result:', executionResult);
 ## Testing
 
 Tests are located in:
+
 - `src/__tests__/parser.test.ts` - Parser functionality tests
 - `src/__tests__/executor.test.ts` - Execution engine tests
 
 Test coverage includes:
+
 - All expression types and operator precedence
 - Variable declarations and assignments
 - Control flow statements
@@ -141,6 +153,7 @@ Test coverage includes:
 - Market data integration
 
 To run a specific test:
+
 ```bash
 npm test -- --testNamePattern="should parse arithmetic expressions"
 ```

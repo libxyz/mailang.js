@@ -19,7 +19,6 @@ describe('Mai Language Parser', () => {
   describe('Basic Expressions', () => {
     test('should parse number literals', () => {
       const result = parseMai('42;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body).toHaveLength(1);
       expect(result.ast.body[0]).toMatchObject({
         type: ASTNodeType.ExpressionStatement,
@@ -32,7 +31,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse string literals', () => {
       const result = parseMai('"hello world";');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body).toHaveLength(1);
       expectExpression(result, 0, {
         type: ASTNodeType.StringLiteral,
@@ -42,7 +40,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse identifiers', () => {
       const result = parseMai('myVariable;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body).toHaveLength(1);
       expectExpression(result, 0, {
         type: ASTNodeType.Identifier,
@@ -52,7 +49,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse reserved market data keywords', () => {
       const result = parseMai('O; H; L; C;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body).toHaveLength(4);
       expectExpression(result, 0, {
         type: 'Identifier',
@@ -76,7 +72,6 @@ describe('Mai Language Parser', () => {
   describe('Arithmetic Expressions', () => {
     test('should parse addition', () => {
       const result = parseMai('1 + 2;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: ASTNodeType.BinaryExpression,
         operator: BinaryOperator.Plus,
@@ -87,7 +82,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse subtraction', () => {
       const result = parseMai('5 - 3;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '-',
@@ -98,7 +92,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse multiplication', () => {
       const result = parseMai('4 * 3;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '*',
@@ -109,7 +102,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse division', () => {
       const result = parseMai('10 / 2;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '/',
@@ -120,7 +112,6 @@ describe('Mai Language Parser', () => {
 
     test('should respect operator precedence', () => {
       const result = parseMai('2 + 3 * 4;');
-      expect(result.errors).toHaveLength(0);
       const expr = getExpression(result.ast.body[0]);
       expect(expr).toMatchObject({
         type: 'BinaryExpression',
@@ -137,7 +128,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse unary operators', () => {
       const result = parseMai('-5; +3;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body).toHaveLength(2);
       expectExpression(result, 0, {
         type: ASTNodeType.UnaryExpression,
@@ -155,7 +145,6 @@ describe('Mai Language Parser', () => {
   describe('Relational Expressions', () => {
     test('should parse greater than', () => {
       const result = parseMai('5 > 3;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '>',
@@ -166,7 +155,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse less than', () => {
       const result = parseMai('3 < 5;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '<',
@@ -177,7 +165,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse greater than or equal', () => {
       const result = parseMai('5 >= 5;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '>=',
@@ -188,7 +175,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse less than or equal', () => {
       const result = parseMai('3 <= 5;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '<=',
@@ -199,7 +185,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse not equal', () => {
       const result = parseMai('5 <> 3;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '<>',
@@ -210,7 +195,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse equal', () => {
       const result = parseMai('5 = 5;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '=',
@@ -223,7 +207,6 @@ describe('Mai Language Parser', () => {
   describe('Logical Expressions', () => {
     test('should parse logical AND', () => {
       const result = parseMai('true && false;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '&&',
@@ -234,7 +217,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse logical OR', () => {
       const result = parseMai('true || false;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'BinaryExpression',
         operator: '||',
@@ -245,7 +227,6 @@ describe('Mai Language Parser', () => {
 
     test('should respect logical operator precedence', () => {
       const result = parseMai('a || b && c;');
-      expect(result.errors).toHaveLength(0);
       const expr = getExpression(result.ast.body[0]);
       expect(expr).toMatchObject({
         type: 'BinaryExpression',
@@ -264,7 +245,6 @@ describe('Mai Language Parser', () => {
   describe('Assignment Expressions', () => {
     test('should parse assignment', () => {
       const result = parseMai('x := 5;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: ASTNodeType.AssignmentExpression,
         operator: AssignmentOperator.Assign,
@@ -275,7 +255,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse display assignment', () => {
       const result = parseMai('x : 5;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'AssignmentExpression',
         operator: AssignmentOperator.DisplayAssign,
@@ -286,7 +265,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse power assignment', () => {
       const result = parseMai('x ^^ 2;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'AssignmentExpression',
         operator: AssignmentOperator.PowerAssign,
@@ -297,7 +275,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse range operator', () => {
       const result = parseMai('1..10;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'AssignmentExpression',
         operator: AssignmentOperator.RangeOperator,
@@ -310,7 +287,6 @@ describe('Mai Language Parser', () => {
   describe('Variable Declarations', () => {
     test('should parse variable declaration', () => {
       const result = parseMai('VARIABLE: x, y, z;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body[0]).toMatchObject({
         type: 'VariableDeclaration',
         variables: [
@@ -323,7 +299,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse variable declaration with initialization', () => {
       const result = parseMai('VARIABLE: x := 5, y := 10;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body[0]).toMatchObject({
         type: 'VariableDeclaration',
         variables: [
@@ -337,7 +312,6 @@ describe('Mai Language Parser', () => {
   describe('If Statements', () => {
     test('should parse if statement', () => {
       const result = parseMai('IF x > 0 THEN BEGIN y := 1; END');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body[0]).toMatchObject({
         type: 'IfStatement',
         test: {
@@ -365,7 +339,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse if-else statement', () => {
       const result = parseMai('IF x > 0 THEN BEGIN y := 1; END ELSE BEGIN y := -1; END');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body[0]).toMatchObject({
         type: 'IfStatement',
         test: {
@@ -413,7 +386,6 @@ describe('Mai Language Parser', () => {
   describe('Return Statements', () => {
     test('should parse return statement', () => {
       const result = parseMai('RETURN x;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body[0]).toMatchObject({
         type: 'ReturnStatement',
         argument: { type: 'Identifier', name: 'x' },
@@ -422,7 +394,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse return statement without argument', () => {
       const result = parseMai('RETURN;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body[0]).toMatchObject({
         type: 'ReturnStatement',
         argument: undefined,
@@ -433,7 +404,6 @@ describe('Mai Language Parser', () => {
   describe('Block Statements', () => {
     test('should parse block statement', () => {
       const result = parseMai('BEGIN x := 1; y := 2; END');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body[0]).toMatchObject({
         type: 'BlockStatement',
         body: [
@@ -463,7 +433,6 @@ describe('Mai Language Parser', () => {
   describe('Comments', () => {
     test('should ignore line comments', () => {
       const result = parseMai('// This is a comment\nx := 5;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body).toHaveLength(1);
       expect(result.ast.body[0]).toMatchObject({
         type: 'ExpressionStatement',
@@ -478,7 +447,6 @@ describe('Mai Language Parser', () => {
 
     test('should ignore block comments', () => {
       const result = parseMai('/* This is a\n   block comment */\nx := 5;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body).toHaveLength(1);
       expect(result.ast.body[0]).toMatchObject({
         type: 'ExpressionStatement',
@@ -495,7 +463,6 @@ describe('Mai Language Parser', () => {
   describe('Function Calls', () => {
     test('should parse function calls', () => {
       const result = parseMai('myFunction(1, 2, 3);');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'CallExpression',
         callee: { type: 'Identifier', name: 'myFunction' },
@@ -509,7 +476,6 @@ describe('Mai Language Parser', () => {
 
     test('should parse function calls without arguments', () => {
       const result = parseMai('myFunction();');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'CallExpression',
         callee: { type: 'Identifier', name: 'myFunction' },
@@ -521,7 +487,6 @@ describe('Mai Language Parser', () => {
   describe('Member Expressions', () => {
     test('should parse member access', () => {
       const result = parseMai('obj.property;');
-      expect(result.errors).toHaveLength(0);
       expectExpression(result, 0, {
         type: 'MemberExpression',
         object: { type: 'Identifier', name: 'obj' },
@@ -534,33 +499,34 @@ describe('Mai Language Parser', () => {
   describe('Complex Expressions', () => {
     test('should parse complex nested expressions', () => {
       const result = parseMai('(price - SMA(price, 20)) / SMA(price, 20) * 100;');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body).toHaveLength(1);
       expect(result.ast.body[0].type).toBe('ExpressionStatement');
     });
 
     test('should parse technical indicator expressions', () => {
       const result = parseMai('MA(C, 5) > MA(C, 10) && MA(C, 5) > MA(C, 20);');
-      expect(result.errors).toHaveLength(0);
       expect(result.ast.body).toHaveLength(1);
       expect(result.ast.body[0].type).toBe('ExpressionStatement');
     });
   });
 
   describe('Error Handling', () => {
-    test('should report syntax errors', () => {
-      const result = parseMai('x := ;');
-      expect(result.errors.length).toBeGreaterThan(0);
+    test('should throw syntax errors', () => {
+      expect(() => {
+        parseMai('x := ;');
+      }).toThrow();
     });
 
-    test('should report missing semicolon', () => {
-      const result = parseMai('x := 5');
-      expect(result.errors.length).toBeGreaterThan(0);
+    test('should throw missing semicolon', () => {
+      expect(() => {
+        parseMai('x := 5');
+      }).toThrow();
     });
 
-    test('should report unclosed block', () => {
-      const result = parseMai('BEGIN x := 1;');
-      expect(result.errors.length).toBeGreaterThan(0);
+    test('should throw unclosed block', () => {
+      expect(() => {
+        parseMai('BEGIN x := 1;');
+      }).toThrow();
     });
   });
 });

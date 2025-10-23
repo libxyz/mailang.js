@@ -113,21 +113,7 @@ export interface ReturnStatement extends BaseNode {
   argument?: Expression;
 }
 
-export type Statement =
-  | ExpressionStatement
-  | BlockStatement
-  | IfStatement
-  | ReturnStatement
-  | VariableDeclaration;
-
-// Special Mai language constructs
-export interface GlobalVariableDeclaration extends BaseNode {
-  type: ASTNodeType.GlobalVariableDeclaration;
-  variables: Array<{
-    id: Identifier;
-    init?: Expression;
-  }>;
-}
+export type Statement = ExpressionStatement | BlockStatement | IfStatement | ReturnStatement | VariableDeclaration;
 
 // Reserved keywords for market data
 export const RESERVED_KEYWORDS = ['O', 'H', 'L', 'C']; // Open, High, Low, Close prices

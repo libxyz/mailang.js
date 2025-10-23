@@ -353,12 +353,7 @@ export class ASTBuilder {
     if (!isCstNode(leftElement)) throw new Error('Expected CST node');
     const left = this.visitLogicalORExpression(leftElement);
 
-    if (
-      ctx.children.Assign ||
-      ctx.children.DisplayAssign ||
-      ctx.children.PowerAssign ||
-      ctx.children.RangeOperator
-    ) {
+    if (ctx.children.Assign || ctx.children.DisplayAssign || ctx.children.PowerAssign || ctx.children.RangeOperator) {
       const operator =
         ctx.children.Assign?.[0] ||
         ctx.children.DisplayAssign?.[0] ||
@@ -475,13 +470,11 @@ export class ASTBuilder {
     let left = this.visitMultiplicativeExpression(leftElement);
 
     if (ctx.children.Plus || ctx.children.Minus) {
-      const operators = [...(ctx.children.Plus || []), ...(ctx.children.Minus || [])].sort(
-        (a, b) => {
-          const aToken = isToken(a) ? a.startOffset || 0 : 0;
-          const bToken = isToken(b) ? b.startOffset || 0 : 0;
-          return aToken - bToken;
-        }
-      );
+      const operators = [...(ctx.children.Plus || []), ...(ctx.children.Minus || [])].sort((a, b) => {
+        const aToken = isToken(a) ? a.startOffset || 0 : 0;
+        const bToken = isToken(b) ? b.startOffset || 0 : 0;
+        return aToken - bToken;
+      });
 
       for (let i = 0; i < operators.length; i++) {
         const operator = operators[i];
@@ -509,13 +502,11 @@ export class ASTBuilder {
     let left = this.visitUnaryExpression(leftElement);
 
     if (ctx.children.Multiply || ctx.children.Divide) {
-      const operators = [...(ctx.children.Multiply || []), ...(ctx.children.Divide || [])].sort(
-        (a, b) => {
-          const aToken = isToken(a) ? a.startOffset || 0 : 0;
-          const bToken = isToken(b) ? b.startOffset || 0 : 0;
-          return aToken - bToken;
-        }
-      );
+      const operators = [...(ctx.children.Multiply || []), ...(ctx.children.Divide || [])].sort((a, b) => {
+        const aToken = isToken(a) ? a.startOffset || 0 : 0;
+        const bToken = isToken(b) ? b.startOffset || 0 : 0;
+        return aToken - bToken;
+      });
 
       for (let i = 0; i < operators.length; i++) {
         const operator = operators[i];
@@ -640,9 +631,7 @@ export class ASTBuilder {
   }
 
   public visitCallExpression(ctx: CstNode, callee: AST.Expression): AST.CallExpression {
-    const args = ctx.children.argumentList
-      ? this.visitArgumentList(ctx.children.argumentList[0] as CstNode)
-      : [];
+    const args = ctx.children.argumentList ? this.visitArgumentList(ctx.children.argumentList[0] as CstNode) : [];
 
     return {
       type: ASTNodeType.CallExpression,

@@ -37,12 +37,6 @@ export const Identifier = createToken({
   pattern: /[a-zA-Z_][a-zA-Z0-9_]*/,
 });
 
-// Reserved market data keywords
-export const O = createToken({ name: 'O', pattern: /O/ });
-export const H = createToken({ name: 'H', pattern: /H/ });
-export const L = createToken({ name: 'L', pattern: /L/ });
-export const C = createToken({ name: 'C', pattern: /C/ });
-
 // Keywords
 export const VARIABLE = createToken({ name: 'VARIABLE', pattern: /VARIABLE/ });
 export const IF = createToken({ name: 'IF', pattern: /IF/ });
@@ -172,12 +166,6 @@ export const allTokens = [
   // Literals
   NumberLiteral,
   StringLiteral,
-
-  // Reserved keywords
-  O,
-  H,
-  L,
-  C,
 
   // Keywords
   VARIABLE,

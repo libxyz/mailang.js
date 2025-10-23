@@ -5,7 +5,6 @@ export enum ASTNodeType {
   // Statements
   ExpressionStatement = 'ExpressionStatement',
   VariableDeclaration = 'VariableDeclaration',
-  GlobalVariableDeclaration = 'GlobalVariableDeclaration',
   IfStatement = 'IfStatement',
   BlockStatement = 'BlockStatement',
   ReturnStatement = 'ReturnStatement',
@@ -86,4 +85,27 @@ export enum ExpressionType {
   Member = 'MemberExpression',
   Identifier = 'Identifier',
   Literal = 'Literal',
+}
+
+// Error Type Enums
+export enum ErrorType {
+  // Runtime Errors
+  RUNTIME_ERROR = 'RuntimeError',
+  TYPE_ERROR = 'TypeError',
+  REFERENCE_ERROR = 'ReferenceError',
+  BUILTIN_ERROR = 'BuiltinError',
+
+  // Parse Errors
+  SYNTAX_ERROR = 'SyntaxError',
+  UNEXPECTED_TOKEN = 'UnexpectedToken',
+  MISSING_TOKEN = 'MissingToken',
+
+  // Semantic Errors
+  UNDEFINED_VARIABLE = 'UndefinedVariable',
+  INVALID_OPERATOR = 'InvalidOperator',
+  INVALID_ASSIGNMENT = 'InvalidAssignment',
+  INVALID_FUNCTION_CALL = 'InvalidFunctionCall',
+  INVALID_MEMBER_ACCESS = 'InvalidMemberAccess',
+  DIVISION_BY_ZERO = 'DivisionByZero',
+  UNIMPLEMENTED_FEATURE = 'UnimplementedFeature',
 }
