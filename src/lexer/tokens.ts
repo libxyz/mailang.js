@@ -46,6 +46,16 @@ export const BEGIN = createToken({ name: 'BEGIN', pattern: /BEGIN/ });
 export const END = createToken({ name: 'END', pattern: /END/ });
 export const RETURN = createToken({ name: 'RETURN', pattern: /RETURN/ });
 
+export const KEYWORDS: TokenType[] = [
+  VARIABLE,
+  IF,
+  THEN,
+  ELSE,
+  BEGIN,
+  END,
+  RETURN,
+];
+
 // Operators (ordered by precedence)
 export const MultiplicativeOp = createToken({
   name: 'MultiplicativeOp',

@@ -2,7 +2,7 @@ import { MaiVM, MarketData } from '../interpreter';
 
 // 扩展MarketData接口以支持成交量
 interface ExtendedMarketData extends MarketData {
-  volume?: number;
+  volume: number;
 }
 
 describe('Multi-Candle Interpreter Tests', () => {

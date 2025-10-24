@@ -1,7 +1,7 @@
 import { IRInstruction, IROpcode, IRProgram } from './types';
 
 export function dump(program: IRProgram): string {
-  const inst = program.mainFunction.instructions;
+  const inst = program.main.instructions;
   return inst.map(dumpInst).join('\n');
 }
 

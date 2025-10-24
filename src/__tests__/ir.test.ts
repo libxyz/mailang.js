@@ -1,6 +1,6 @@
 import { parseMai } from '../index';
 import { IRGenerator } from '../ir/compile';
-import { IRInterpreter,  executeMai, MaiVM } from '../interpreter';
+import { Interpreter, executeMai, MaiVM } from '../interpreter';
 import { MarketData } from '../interpreter/core';
 import { IROpcode } from '../ir/types';
 
@@ -19,7 +19,7 @@ describe('IR (Intermediate Representation)', () => {
       const ir = generator.gen(ast);
 
       expect(ir.constants).toContain(42);
-      expect(ir.mainFunction.instructions).toContainEqual(
+      expect(ir.main.instructions).toContainEqual(
         expect.objectContaining({ opcode: IROpcode.LOAD_CONST, operand: 0 }) // Index 0 in constants array
       );
       // Don't expect POP for the last statement
@@ -31,7 +31,7 @@ describe('IR (Intermediate Representation)', () => {
       const ir = generator.gen(ast);
 
       expect(ir.constants).toContain('hello');
-      expect(ir.mainFunction.instructions).toContainEqual(
+      expect(ir.main.instructions).toContainEqual(
         expect.objectContaining({ opcode: IROpcode.LOAD_CONST, operand: 0 }) // Index 0 in constants array
       );
     });
@@ -42,7 +42,7 @@ describe('IR (Intermediate Representation)', () => {
       const ir = generator.gen(ast);
 
       expect(ir.constants).toContain(1);
-      expect(ir.mainFunction.instructions).toContainEqual(
+      expect(ir.main.instructions).toContainEqual(
         expect.objectContaining({ opcode: IROpcode.LOAD_CONST, operand: 0 }) // Index 0 in constants array
       );
     });
@@ -53,13 +53,9 @@ describe('IR (Intermediate Representation)', () => {
       const ir = generator.gen(ast);
 
       // Should have LOAD_CONST for 2 and 3, then ADD
-      const constInstructions = ir.mainFunction.instructions.filter(
-        (inst) => inst.opcode === IROpcode.LOAD_CONST
-      );
+      const constInstructions = ir.main.instructions.filter(inst => inst.opcode === IROpcode.LOAD_CONST);
       expect(constInstructions).toHaveLength(2);
-      expect(ir.mainFunction.instructions).toContainEqual(
-        expect.objectContaining({ opcode: IROpcode.ADD })
-      );
+      expect(ir.main.instructions).toContainEqual(expect.objectContaining({ opcode: IROpcode.ADD }));
     });
 
     test('should generate IR for variable assignments', () => {
@@ -68,12 +64,8 @@ describe('IR (Intermediate Representation)', () => {
       const ir = generator.gen(ast);
 
       // Check that we have the expected instructions - operand is index into constants array
-      expect(ir.mainFunction.instructions).toContainEqual(
-        expect.objectContaining({ opcode: IROpcode.LOAD_CONST })
-      );
-      expect(ir.mainFunction.instructions).toContainEqual(
-        expect.objectContaining({ opcode: IROpcode.STORE_VAR })
-      );
+      expect(ir.main.instructions).toContainEqual(expect.objectContaining({ opcode: IROpcode.LOAD_CONST }));
+      expect(ir.main.instructions).toContainEqual(expect.objectContaining({ opcode: IROpcode.STORE_VAR }));
     });
 
     test('should generate IR for display assignments', () => {
@@ -81,12 +73,10 @@ describe('IR (Intermediate Representation)', () => {
       const generator = new IRGenerator();
       const ir = generator.gen(ast);
 
-      expect(ir.mainFunction.instructions).toContainEqual(
-        expect.objectContaining({ opcode: IROpcode.LOAD_CONST })
-      );
+      expect(ir.main.instructions).toContainEqual(expect.objectContaining({ opcode: IROpcode.LOAD_CONST }));
       // Should have both STORE_VAR and STORE_OUTPUT
-      expect(ir.mainFunction.instructions.filter((inst: any) => inst.opcode === IROpcode.STORE_VAR)).toHaveLength(1);
-      expect(ir.mainFunction.instructions.filter((inst: any) => inst.opcode === IROpcode.STORE_OUTPUT)).toHaveLength(1);
+      expect(ir.main.instructions.filter((inst: any) => inst.opcode === IROpcode.STORE_VAR)).toHaveLength(1);
+      expect(ir.main.instructions.filter((inst: any) => inst.opcode === IROpcode.STORE_OUTPUT)).toHaveLength(1);
     });
 
     test('should generate IR for if statements', () => {
@@ -95,15 +85,9 @@ describe('IR (Intermediate Representation)', () => {
       const ir = generator.gen(ast);
 
       // Should have comparison, jump instructions, and assignment
-      expect(ir.mainFunction.instructions).toContainEqual(
-        expect.objectContaining({ opcode: IROpcode.GT })
-      );
-      expect(ir.mainFunction.instructions).toContainEqual(
-        expect.objectContaining({ opcode: IROpcode.JUMP_IF_FALSE })
-      );
-      expect(ir.mainFunction.instructions).toContainEqual(
-        expect.objectContaining({ opcode: IROpcode.LOAD_CONST, operand: 1 })
-      );
+      expect(ir.main.instructions).toContainEqual(expect.objectContaining({ opcode: IROpcode.GT }));
+      expect(ir.main.instructions).toContainEqual(expect.objectContaining({ opcode: IROpcode.JUMP_IF_FALSE }));
+      expect(ir.main.instructions).toContainEqual(expect.objectContaining({ opcode: IROpcode.LOAD_CONST, operand: 1 }));
     });
 
     test('should generate IR for function calls', () => {
@@ -112,10 +96,10 @@ describe('IR (Intermediate Representation)', () => {
       const ir = generator.gen(ast);
 
       // Should have CALL_BUILTIN instruction
-      expect(ir.mainFunction.instructions).toContainEqual(
+      expect(ir.main.instructions).toContainEqual(
         expect.objectContaining({
           opcode: IROpcode.CALL_BUILTIN,
-          operand: expect.objectContaining({ name: 'MAX', argCount: 3 })
+          operand: expect.objectContaining({ name: 'MAX', argCount: 3 }),
         })
       );
       // Note: builtinFunctions is tracked in IRGeneratorContext, not IRProgram
@@ -127,7 +111,7 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('42;').ast;
       const generator = new IRGenerator();
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       expect(result.lastResult).toBe(42);
@@ -137,7 +121,7 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('2 + 3 * 4;').ast;
       const generator = new IRGenerator();
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       expect(result.lastResult).toBe(14); // 2 + (3 * 4)
@@ -147,7 +131,7 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('x := 5; y := x + 3;').ast;
       const generator = new IRGenerator();
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       // Note: The IR executor doesn't populate vars Map the same way as AST executor
@@ -158,7 +142,7 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('x : 42;').ast;
       const generator = new IRGenerator();
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       expect(result.output.x || result.lastResult || result.lastResult).toBe(42);
@@ -174,7 +158,7 @@ describe('IR (Intermediate Representation)', () => {
       `).ast;
       const generator = new IRGenerator();
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       // x should be set to 1 since 5 > 3 is true
@@ -184,7 +168,7 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('result := MAX(1, 5, 3, 9, 2);').ast;
       const generator = new IRGenerator();
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       // Note: result will be in output due to display assignment behavior
@@ -205,7 +189,7 @@ describe('IR (Intermediate Representation)', () => {
       expect(result).toBeDefined();
       // The key point is that IR was generated with debug info
       const irProgram = executor.getIRProgram();
-      expect(irProgram.mainFunction.instructions.length).toBeGreaterThan(0);
+      expect(irProgram.main.instructions.length).toBeGreaterThan(0);
     });
 
     test('should execute if statements via IR', () => {
@@ -220,7 +204,7 @@ describe('IR (Intermediate Representation)', () => {
       // Verify execution doesn't throw - focus on IR generation working
       expect(result).toBeDefined();
       const irProgram = executor.getIRProgram();
-      expect(irProgram.mainFunction.instructions.some((inst: any) => inst.opcode === IROpcode.JUMP_IF_FALSE)).toBe(true);
+      expect(irProgram.main.instructions.some((inst: any) => inst.opcode === IROpcode.JUMP_IF_FALSE)).toBe(true);
     });
 
     test('should execute function calls via IR', () => {
@@ -229,7 +213,7 @@ describe('IR (Intermediate Representation)', () => {
       // Verify execution doesn't throw - focus on IR generation working
       expect(result).toBeDefined();
       const irProgram = executor.getIRProgram();
-      expect(irProgram.mainFunction.instructions.some((inst: any) => inst.opcode === IROpcode.CALL_BUILTIN)).toBe(true);
+      expect(irProgram.main.instructions.some((inst: any) => inst.opcode === IROpcode.CALL_BUILTIN)).toBe(true);
     });
 
     test('should handle division by zero via IR', () => {
@@ -254,7 +238,7 @@ describe('IR (Intermediate Representation)', () => {
       // Verify execution doesn't throw - focus on IR generation working
       expect(result).toBeDefined();
       const irProgram = executor.getIRProgram();
-      expect(irProgram.mainFunction.instructions.length).toBeGreaterThan(0);
+      expect(irProgram.main.instructions.length).toBeGreaterThan(0);
     });
 
     test('should work with AST input', () => {
@@ -264,7 +248,7 @@ describe('IR (Intermediate Representation)', () => {
       // Verify execution doesn't throw - focus on IR generation working
       expect(result).toBeDefined();
       const irProgram = executor.getIRProgram();
-      expect(irProgram.mainFunction.instructions.length).toBeGreaterThan(0);
+      expect(irProgram.main.instructions.length).toBeGreaterThan(0);
     });
 
     test('should provide access to IR program', () => {
@@ -286,21 +270,21 @@ describe('IR (Intermediate Representation)', () => {
       const ir = generator.gen(ast);
 
       // Verify stack depth calculation
-      expect(ir.mainFunction.maxStackDepth).toBeGreaterThan(0);
-      expect(ir.mainFunction.localsCount).toBeGreaterThan(0);
+      expect(ir.main.maxStackDepth).toBeGreaterThan(0);
+      expect(ir.main.localsCount).toBeGreaterThan(0);
     });
 
     test('should handle nested expressions without stack overflow', () => {
       const ast = parseMai('result := ((1 + 2) * (3 + 4)) - ((5 + 6) * (7 + 8));').ast;
       const generator = new IRGenerator();
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       // Verify execution doesn't throw - focus on IR generation working
       expect(result).toBeDefined();
       // Check that complex expression generated multiple instructions
-      expect(ir.mainFunction.instructions.length).toBeGreaterThan(5);
+      expect(ir.main.instructions.length).toBeGreaterThan(5);
     });
   });
 
@@ -320,7 +304,7 @@ describe('IR (Intermediate Representation)', () => {
       expect(irResult).toBeDefined();
       // Verify IR was generated (debug info may not be enabled by default in MaiExecutor)
       const irProgram = irExecutor.getIRProgram();
-      expect(irProgram.mainFunction.instructions.length).toBeGreaterThan(0);
+      expect(irProgram.main.instructions.length).toBeGreaterThan(0);
     });
 
     test('should produce same results for variable assignments', () => {
@@ -365,13 +349,11 @@ describe('IR (Intermediate Representation)', () => {
       const ir = generator.gen(ast);
 
       // Check that debug information is present in instructions
-      const debugInstructions = ir.mainFunction.instructions.filter(
-        (inst: any) => inst.extra && inst.extra.loc !== undefined
-      );
+      const debugInstructions = ir.main.instructions.filter((inst: any) => inst.extra && inst.extra.loc !== undefined);
       expect(debugInstructions.length).toBeGreaterThan(0);
 
       // Verify specific instruction has debug info
-      const addInstruction = ir.mainFunction.instructions.find((inst: any) => inst.opcode === IROpcode.ADD);
+      const addInstruction = ir.main.instructions.find((inst: any) => inst.opcode === IROpcode.ADD);
       expect(addInstruction?.extra).toBeDefined();
       expect(addInstruction?.extra?.loc).toBeDefined();
       expect(addInstruction?.extra?.loc?.start?.line).toBeDefined();
@@ -384,9 +366,7 @@ describe('IR (Intermediate Representation)', () => {
       const ir = generator.gen(ast);
 
       // Check that no debug information is present
-      const debugInstructions = ir.mainFunction.instructions.filter(
-        (inst: any) => inst.extra && inst.extra.loc !== undefined
-      );
+      const debugInstructions = ir.main.instructions.filter((inst: any) => inst.extra && inst.extra.loc !== undefined);
       expect(debugInstructions.length).toBe(0);
     });
 
@@ -394,24 +374,22 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('x := 5 + 3; y := x * 2;').ast;
       const generator = new IRGenerator({ debug: true });
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
 
       // Verify execution doesn't throw - focus on debug info being present
       expect(result).toBeDefined();
       // All instructions should have debug information
-      const debugInstructions = ir.mainFunction.instructions.filter(
-        (inst: any) => inst.extra && inst.extra.loc !== undefined
-      );
-      expect(debugInstructions.length).toBe(ir.mainFunction.instructions.length);
+      const debugInstructions = ir.main.instructions.filter((inst: any) => inst.extra && inst.extra.loc !== undefined);
+      expect(debugInstructions.length).toBe(ir.main.instructions.length);
     });
 
     test('should handle complex expressions with debug information', () => {
       const ast = parseMai('result := ((1 + 2) * (3 + 4)) - ((5 + 6) * (7 + 8));').ast;
       const generator = new IRGenerator({ debug: true });
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
 
@@ -420,7 +398,7 @@ describe('IR (Intermediate Representation)', () => {
       // Verify debug info is present in arithmetic operations
       const arithmeticOps = [IROpcode.ADD, IROpcode.MUL, IROpcode.SUB];
       arithmeticOps.forEach(opcode => {
-        const ops = ir.mainFunction.instructions.filter((inst: any) => inst.opcode === opcode);
+        const ops = ir.main.instructions.filter((inst: any) => inst.opcode === opcode);
         ops.forEach((op: any) => {
           expect(op.extra).toBeDefined();
           expect(op.extra?.loc?.start?.line).toBeDefined();
@@ -433,15 +411,13 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('result := MAX(1, 5, 3, 9, 2);').ast;
       const generator = new IRGenerator({ debug: true });
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       expect(result).toBeDefined();
 
       // Check debug info in function call
-      const callInstruction = ir.mainFunction.instructions.find(
-        (inst: any) => inst.opcode === IROpcode.CALL_BUILTIN
-      );
+      const callInstruction = ir.main.instructions.find((inst: any) => inst.opcode === IROpcode.CALL_BUILTIN);
       expect(callInstruction?.extra).toBeDefined();
       expect(callInstruction?.extra?.loc).toBeDefined();
       expect(callInstruction?.extra?.loc?.start?.line).toBeDefined();
@@ -458,7 +434,7 @@ describe('IR (Intermediate Representation)', () => {
       `).ast;
       const generator = new IRGenerator({ debug: true });
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
 
@@ -468,7 +444,7 @@ describe('IR (Intermediate Representation)', () => {
       // Check debug info in control flow instructions
       const controlFlowOps = [IROpcode.JUMP_IF_FALSE, IROpcode.JUMP];
       controlFlowOps.forEach(opcode => {
-        const ops = ir.mainFunction.instructions.filter((inst) => inst.opcode === opcode);
+        const ops = ir.main.instructions.filter(inst => inst.opcode === opcode);
         ops.forEach((op: any) => {
           expect(op.extra).toBeDefined();
           expect(op.extra?.loc?.start?.line).toBeDefined();
@@ -481,17 +457,15 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('price_range := H - L;').ast;
       const generator = new IRGenerator({ debug: true });
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       expect(result).toBeDefined();
 
       // Check debug info in global variable access
-      const globalInstructions = ir.mainFunction.instructions.filter(
-        (inst: any) => inst.opcode === IROpcode.LOAD_GLOBAL
-      );
+      const globalInstructions = ir.main.instructions.filter((inst: any) => inst.opcode === IROpcode.LOAD_GLOBAL);
       expect(globalInstructions.length).toBeGreaterThan(0);
-      globalInstructions.forEach((inst) => {
+      globalInstructions.forEach(inst => {
         expect(inst.extra).toBeDefined();
         expect(inst.extra?.loc?.start.line).toBeDefined();
         expect(inst.extra?.loc?.start.column).toBeDefined();
@@ -502,15 +476,13 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('RETURN 42;').ast;
       const generator = new IRGenerator({ debug: true });
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       expect(result.lastResult).toBe(42);
 
       // Check debug info in return instruction
-      const returnInstruction = ir.mainFunction.instructions.find(
-        (inst: any) => inst.opcode === IROpcode.RETURN
-      );
+      const returnInstruction = ir.main.instructions.find((inst: any) => inst.opcode === IROpcode.RETURN);
       expect(returnInstruction?.extra).toBeDefined();
       expect(returnInstruction?.extra?.loc).toBeDefined();
       expect(returnInstruction?.extra?.loc?.start?.line).toBeDefined();
@@ -521,15 +493,13 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('x : 42;').ast;
       const generator = new IRGenerator({ debug: true });
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
       expect(result.output.x || result.lastResult || result.lastResult).toBe(42);
 
       // Check debug info in store output instruction
-      const storeOutputInstruction = ir.mainFunction.instructions.find(
-        (inst: any) => inst.opcode === IROpcode.STORE_OUTPUT
-      );
+      const storeOutputInstruction = ir.main.instructions.find((inst: any) => inst.opcode === IROpcode.STORE_OUTPUT);
       expect(storeOutputInstruction?.extra).toBeDefined();
       expect(storeOutputInstruction?.extra?.loc).toBeDefined();
       expect(storeOutputInstruction?.extra?.loc?.start?.line).toBeDefined();
@@ -543,16 +513,14 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('x := 10 / 0;').ast;
       const generator = new IRGenerator({ debug: true });
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       expect(() => {
         executor.execute(sampleMarketData);
       }).toThrow('Division by zero');
 
       // Check that debug info was present in the division instruction
-      const divInstruction = ir.mainFunction.instructions.find(
-        (inst: any) => inst.opcode === IROpcode.DIV
-      );
+      const divInstruction = ir.main.instructions.find((inst: any) => inst.opcode === IROpcode.DIV);
       expect(divInstruction?.extra).toBeDefined();
       expect(divInstruction?.extra?.loc).toBeDefined();
       expect(divInstruction?.extra?.loc?.start?.line).toBeDefined();
@@ -563,16 +531,14 @@ describe('IR (Intermediate Representation)', () => {
       const ast = parseMai('x := "hello" + 5;').ast;
       const generator = new IRGenerator({ debug: true });
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       // This might throw depending on implementation
       try {
         executor.execute(sampleMarketData);
       } catch (error) {
         // Should have debug info in the addition instruction
-        const addInstruction = ir.mainFunction.instructions.find(
-          (inst: any) => inst.opcode === IROpcode.ADD
-        );
+        const addInstruction = ir.main.instructions.find((inst: any) => inst.opcode === IROpcode.ADD);
         expect(addInstruction?.extra).toBeDefined();
         expect(addInstruction?.extra?.loc).toBeDefined();
         expect(addInstruction?.extra?.loc?.start?.line).toBeDefined();
@@ -593,13 +559,24 @@ describe('IR (Intermediate Representation)', () => {
     test('should handle stack underflow with debug information', () => {
       // Create a custom IR program that will cause stack underflow
       const { IROpcode } = require('../ir/types');
-      const customIR = {
+
+      const executor = new Interpreter({
         functions: [],
-        mainFunction: {
+        main: {
           name: 'main',
           instructions: [
-            { id: 0, opcode: IROpcode.ADD, operand: undefined, extra: { loc: { start: { line: 1, column: 1 }, end: { line: 1, column: 2 } } } }, // Will cause underflow
-            { id: 1, opcode: IROpcode.RETURN, operand: undefined, extra: { loc: { start: { line: 2, column: 1 }, end: { line: 2, column: 2 } } } }
+            {
+              id: 0,
+              opcode: IROpcode.ADD,
+              operand: undefined,
+              extra: { loc: { start: { line: 1, column: 1 }, end: { line: 1, column: 2 } } },
+            }, // Will cause underflow
+            {
+              id: 1,
+              opcode: IROpcode.RETURN,
+              operand: undefined,
+              extra: { loc: { start: { line: 2, column: 1 }, end: { line: 2, column: 2 } } },
+            },
           ],
           localsCount: 0,
           globalsCount: 4,
@@ -607,10 +584,13 @@ describe('IR (Intermediate Representation)', () => {
         },
         constants: [],
         labels: new Map(),
-        gLookup: new Map([['O', 0], ['H', 1], ['L', 2], ['C', 3]])
-      };
-
-      const executor = new IRInterpreter(customIR);
+        gLookup: new Map([
+          ['O', 0],
+          ['H', 1],
+          ['L', 2],
+          ['C', 3],
+        ]),
+      });
 
       expect(() => {
         executor.execute(sampleMarketData);
@@ -633,7 +613,7 @@ describe('IR (Intermediate Representation)', () => {
         const ast = parseMai(code).ast;
         const generator = new IRGenerator({ debug: true });
         const ir = generator.gen(ast);
-        const executor = new IRInterpreter(ir);
+        const executor = new Interpreter(ir);
 
         const result = executor.execute(sampleMarketData);
         expect(result.lastResult).toBe(expected);
@@ -660,7 +640,7 @@ describe('IR (Intermediate Representation)', () => {
         const ast = parseMai(code).ast;
         const generator = new IRGenerator({ debug: true });
         const ir = generator.gen(ast);
-        const executor = new IRInterpreter(ir);
+        const executor = new Interpreter(ir);
 
         const result = executor.execute(sampleMarketData);
         expect(result.lastResult).toBe(expected);
@@ -683,7 +663,7 @@ describe('IR (Intermediate Representation)', () => {
         const ast = parseMai(code).ast;
         const generator = new IRGenerator({ debug: true });
         const ir = generator.gen(ast);
-        const executor = new IRInterpreter(ir);
+        const executor = new Interpreter(ir);
 
         const result = executor.execute(sampleMarketData);
         expect(result.lastResult).toBe(expected);
@@ -698,7 +678,7 @@ describe('IR (Intermediate Representation)', () => {
       `).ast;
       const generator = new IRGenerator({ debug: true });
       const ir = generator.gen(ast);
-      const executor = new IRInterpreter(ir);
+      const executor = new Interpreter(ir);
 
       const result = executor.execute(sampleMarketData);
 

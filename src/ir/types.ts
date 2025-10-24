@@ -75,7 +75,7 @@ export interface IRFunction {
 
 export interface IRProgram {
   functions: IRFunction[];
-  mainFunction: IRFunction;
+  main: IRFunction;
   constants: any[];
   labels: Map<string, IRLabel>;
   gLookup: Map<string, number>;
@@ -88,16 +88,16 @@ export interface IRGeneratorContext {
   constants: any[];
   varLookup: Map<string, number>;
   gVarLookup: Map<string, number>;
-  builtinFunctions: Set<string>;
+  builtinFuncs: Set<string>;
   labelCounter: number;
   maxStackDepth: number;
-  currentStackDepth: number;
+  curStackDepth: number;
   labels: IRLabel[];
 }
 
 export interface IRLabel {
   id: string;
-  position: number;
+  pos: number;
 }
 
 // Helper type for tracking stack depth changes
@@ -110,5 +110,4 @@ export interface StackEffect {
 export interface IRGeneratorOptions {
   optimize?: boolean;
   debug?: boolean;
-  inlineBuiltinFunctions?: boolean;
 }

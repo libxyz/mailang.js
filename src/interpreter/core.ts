@@ -12,6 +12,7 @@ export interface MarketData {
   H: number; // High price
   L: number; // Low price
   C: number; // Close price
+  [key: string]: number | null; // Additional market data fields
 }
 
 export interface ExecutionResult {
@@ -39,21 +40,17 @@ export interface ExecFunc<TArgs = any, Output = any> {
 export class MaiVM {
   private ast: Program;
   private ir: IRProgram;
-  private executor: IRInterpreter;
+  private executor: Interpreter;
 
-  constructor(program: string | Program) {
+  constructor(program: string | Program, extraGlobals: string[] = []) {
     if (typeof program === 'string') {
       const parseResult = parseMai(program);
       this.ast = parseResult.ast;
     } else {
       this.ast = program;
     }
-    this.ir = new IRGenerator({
-      optimize: true,
-      debug: true,
-      inlineBuiltinFunctions: true,
-    }).gen(this.ast);
-    this.executor = new IRInterpreter(this.ir);
+    this.ir = new IRGenerator({ optimize: true, debug: true }).gen(this.ast, extraGlobals);
+    this.executor = new Interpreter(this.ir);
   }
 
   execute(marketData: MarketData): ExecutionResult {
@@ -69,7 +66,7 @@ export class MaiVM {
   }
 }
 
-export interface IRContext {
+export interface VMContext {
   stack: any[];
   locals: any[];
   globals: any[];
@@ -79,16 +76,16 @@ export interface IRContext {
   pc: number; // program counter
 }
 
-export class IRInterpreter {
+export class Interpreter {
   private program: IRProgram;
-  private context: IRContext;
+  private ctx: VMContext;
   private round: number = 0;
-  private states: Map<number, Record<string, any>> = new Map();
   private curInst: IRInstruction | undefined;
+  private localStates: Map<number, Record<string, any>> = new Map();
 
   constructor(program: IRProgram) {
     this.program = program;
-    this.context = {
+    this.ctx = {
       stack: [],
       locals: [],
       globals: [],
@@ -99,32 +96,32 @@ export class IRInterpreter {
     };
 
     // Initialize arrays with proper sizes
-    this.context.locals = new Array(program.mainFunction.localsCount);
-    this.context.globals = new Array(program.mainFunction.globalsCount);
+    this.ctx.locals = new Array(program.main.localsCount);
+    this.ctx.globals = new Array(program.main.globalsCount);
   }
 
   execute(marketData: MarketData): ExecutionResult {
     // Reset execution state
-    this.context.stack = [];
-    this.context.output = {};
-    this.context.pc = 0;
+    this.ctx.stack = [];
+    this.ctx.output = {};
+    this.ctx.pc = 0;
     this.round++;
 
     // Load market data into globals (only overwrite market data keys)
     for (const [key, value] of Object.entries(marketData)) {
       const index = this.program.gLookup.get(key);
       if (index !== undefined) {
-        this.context.globals[index] = value;
+        this.ctx.globals[index] = value;
       }
     }
 
     try {
-      this.executeFunction(this.program.mainFunction);
+      this.executeFunction(this.program.main);
       return {
-        output: this.context.output,
-        vars: this.createVarMap(this.context.locals, this.program.localNames),
-        globalVars: this.createVarMap(this.context.globals, this.program.globalNames),
-        lastResult: this.context.stack.length > 0 ? this.context.stack[this.context.stack.length - 1] : undefined,
+        output: this.ctx.output,
+        vars: this.createVarMap(this.ctx.locals, this.program.localNames),
+        globalVars: this.createVarMap(this.ctx.globals, this.program.globalNames),
+        lastResult: this.ctx.stack.length > 0 ? this.ctx.stack[this.ctx.stack.length - 1] : undefined,
       };
     } catch (error) {
       throw this.createExecutionError(error);
@@ -136,8 +133,8 @@ export class IRInterpreter {
   }
 
   private executeFunction(func: IRFunction): void {
-    while (this.context.pc < func.instructions.length) {
-      const instruction = func.instructions[this.context.pc];
+    while (this.ctx.pc < func.instructions.length) {
+      const instruction = func.instructions[this.ctx.pc];
 
       try {
         this.executeInstruction(instruction);
@@ -147,12 +144,12 @@ export class IRInterpreter {
         }
         throw this.newError(
           ErrorType.RUNTIME_ERROR,
-          `Runtime error at instruction ${this.context.pc}: ${(error as Error).message}`,
+          `Runtime error at instruction ${this.ctx.pc}: ${(error as Error).message}`,
           { instruction: instruction.opcode, operand: instruction.operand }
         );
       }
 
-      this.context.pc++;
+      this.ctx.pc++;
     }
   }
 
@@ -163,31 +160,31 @@ export class IRInterpreter {
     switch (opcode) {
       // Load operations
       case IROpcode.LOAD_CONST:
-        this.push(this.context.constants[operand]);
+        this.push(this.ctx.constants[operand]);
         break;
 
       case IROpcode.LOAD_VAR:
-        this.push(this.context.locals[operand]);
+        this.push(this.ctx.locals[operand]);
         break;
 
       case IROpcode.LOAD_GLOBAL:
-        this.push(this.context.globals[operand]);
+        this.push(this.ctx.globals[operand]);
         break;
 
       // Store operations
       case IROpcode.STORE_VAR:
-        this.context.locals[operand] = this.pop();
+        this.ctx.locals[operand] = this.pop();
         break;
 
       case IROpcode.INIT_GLOBAL:
         if (this.round > 1) break;
       case IROpcode.STORE_GLOBAL:
-        this.context.globals[operand] = this.pop();
+        this.ctx.globals[operand] = this.pop();
         break;
 
       case IROpcode.STORE_OUTPUT:
         const outputKey = extra?.operandName;
-        if (outputKey) this.context.output[outputKey] = this.pop();
+        if (outputKey) this.ctx.output[outputKey] = this.pop();
         break;
 
       case IROpcode.UNARY_MINUS:
@@ -261,18 +258,18 @@ export class IRInterpreter {
       // Control flow
       case IROpcode.JUMP_IF_FALSE:
         if (!this.isTruthy(this.pop())) {
-          this.context.pc = this.resolveLabel(operand);
+          this.ctx.pc = this.resolveLabel(operand);
         }
         break;
 
       case IROpcode.JUMP_IF_TRUE:
         if (this.isTruthy(this.pop())) {
-          this.context.pc = this.resolveLabel(operand);
+          this.ctx.pc = this.resolveLabel(operand);
         }
         break;
 
       case IROpcode.JUMP:
-        this.context.pc = this.resolveLabel(operand);
+        this.ctx.pc = this.resolveLabel(operand);
         break;
 
       // Function calls
@@ -288,18 +285,18 @@ export class IRInterpreter {
           throw this.newError(ErrorType.INVALID_FUNCTION_CALL, `Cannot call non-function`);
         }
 
-        let state = this.states.get(instruction.id);
+        let state = this.localStates.get(instruction.id);
         if (!state) {
           state = {};
-          this.states.set(instruction.id, state);
+          this.localStates.set(instruction.id, state);
         }
 
         const result = builtinFunc.execute(args, {
           vars: new Map(),
-          globalVars: new Map(Object.entries(this.context.globals)),
+          globalVars: new Map(Object.entries(this.ctx.globals)),
           funcs: funcRegistry,
           state,
-          output: this.context.output,
+          output: this.ctx.output,
           log: console.log.bind(console),
         });
 
@@ -344,7 +341,7 @@ export class IRInterpreter {
       }
 
       case IROpcode.RETURN:
-        this.context.pc = Number.MAX_SAFE_INTEGER;
+        this.ctx.pc = Number.MAX_SAFE_INTEGER;
         break;
 
       case IROpcode.NOP:
@@ -368,21 +365,21 @@ export class IRInterpreter {
 
   // Stack manipulation helpers
   private push(value: any): void {
-    this.context.stack.push(value);
+    this.ctx.stack.push(value);
   }
 
   private pop(): any {
-    if (this.context.stack.length === 0) {
+    if (this.ctx.stack.length === 0) {
       throw this.newError(ErrorType.RUNTIME_ERROR, 'Stack underflow');
     }
-    return this.context.stack.pop();
+    return this.ctx.stack.pop();
   }
 
   private peek(): any {
-    if (this.context.stack.length === 0) {
+    if (this.ctx.stack.length === 0) {
       throw this.newError(ErrorType.RUNTIME_ERROR, 'Stack underflow');
     }
-    return this.context.stack[this.context.stack.length - 1];
+    return this.ctx.stack[this.ctx.stack.length - 1];
   }
 
   // Utility methods
@@ -402,7 +399,7 @@ export class IRInterpreter {
     if (labelInfo === undefined) {
       throw this.newError(ErrorType.RUNTIME_ERROR, `Undefined label: ${label}`, { label });
     }
-    return labelInfo.position;
+    return labelInfo.pos;
   }
 
   private createExecutionError(error: any): MaiError {
@@ -443,19 +440,15 @@ export function getVar(ctx: ExecCtx, name: string | Symbol): any {
  * Execute Mai source code using IR (Intermediate Representation)
  * This replaces the legacy AST walker with a more efficient IR-based execution
  */
-export function executeMai(
-  sourceCode: string,
-  marketData: MarketData = { O: 0, H: 0, L: 0, C: 0 }
-): ExecutionResult {
+export function executeMai(sourceCode: string, marketData: MarketData = { O: 0, H: 0, L: 0, C: 0 }): ExecutionResult {
   const parseResult = parseMai(sourceCode);
   // Generate IR from AST with debug information enabled for better error reporting
   const irGenerator = new IRGenerator({
     optimize: true,
     debug: true, // Enable debug info for better error reporting
-    inlineBuiltinFunctions: true,
   });
 
   const irProgram = irGenerator.gen(parseResult.ast);
-  const irExecutor = new IRInterpreter(irProgram);
+  const irExecutor = new Interpreter(irProgram);
   return irExecutor.execute(marketData);
 }

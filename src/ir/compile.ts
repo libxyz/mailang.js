@@ -10,57 +10,58 @@ import {
   IRInstructionExtra,
 } from './types';
 import { MaiError } from '../interpreter/err';
+import { KEYWORDS } from '../lexer/tokens';
 
-const PROTECTED_WORDS = new Set<string>(['O', 'H', 'L', 'C', 'IF', 'THEN', 'ELSE', 'BEGIN', 'END', 'RETURN']);
+const PROTECTED_WORDS = new Set<string>(['O', 'H', 'L', 'C'].concat(KEYWORDS.map(token => token.name)));
 
 const DEFAULT_GLOBALS = ['O', 'H', 'L', 'C'];
 
 export class IRGenerator {
-  private context!: IRGeneratorContext; // Use definite assignment assertion
+  private ctx!: IRGeneratorContext; // Use definite assignment assertion
   private options: { optimize: boolean; debug: boolean };
   private curNode: AST.BaseNode | null = null; // Track current node for automatic location
 
-  constructor(options: { optimize?: boolean; debug?: boolean; inlineBuiltinFunctions?: boolean } = {}) {
+  constructor(options: { optimize?: boolean; debug?: boolean } = {}) {
     this.options = {
       optimize: options.optimize ?? false,
       debug: options.debug ?? true,
     };
   }
 
-  gen(program: AST.Program, globals: string[] = DEFAULT_GLOBALS): IRProgram {
-    this.context = {
+  gen(program: AST.Program, extraGlobals: string[] = []): IRProgram {
+    this.ctx = {
       instructions: [],
       constants: [],
       varLookup: new Map(),
       gVarLookup: new Map(),
       labels: [],
-      builtinFunctions: new Set(),
+      builtinFuncs: new Set(),
       labelCounter: 0,
       maxStackDepth: 0,
-      currentStackDepth: 0,
+      curStackDepth: 0,
     };
 
-    globals.forEach(globalVar => this.getOrAddGlobal(globalVar));
+    DEFAULT_GLOBALS.concat(extraGlobals).forEach(globalVar => this.getOrAddGlobal(globalVar));
 
     // Generate IR for the main function
     this.compileProgram(program);
 
     const mainFunction: IRFunction = {
       name: 'main',
-      instructions: this.context.instructions,
-      localsCount: this.context.varLookup.size,
-      globalsCount: this.context.gVarLookup.size,
-      maxStackDepth: this.context.maxStackDepth,
+      instructions: this.ctx.instructions,
+      localsCount: this.ctx.varLookup.size,
+      globalsCount: this.ctx.gVarLookup.size,
+      maxStackDepth: this.ctx.maxStackDepth,
     };
 
     return {
-      labels: new Map(this.context.labels.map(label => [label.id, label])),
-      gLookup: this.context.gVarLookup,
-      constants: this.context.constants,
+      labels: new Map(this.ctx.labels.map(label => [label.id, label])),
+      gLookup: this.ctx.gVarLookup,
+      constants: this.ctx.constants,
       functions: [mainFunction],
-      mainFunction,
-      localNames: this.createReverseMapping(this.context.varLookup),
-      globalNames: this.createReverseMapping(this.context.gVarLookup),
+      main: mainFunction,
+      localNames: this.createReverseMapping(this.ctx.varLookup),
+      globalNames: this.createReverseMapping(this.ctx.gVarLookup),
     };
   }
 
@@ -90,7 +91,7 @@ export class IRGenerator {
       case ASTNodeType.ExpressionStatement:
         this.generateExpression(statement.expression);
         // Only pop if there's something on the stack and it's not the last statement
-        if (!isLastStatement && this.context.currentStackDepth > 0) {
+        if (!isLastStatement && this.ctx.curStackDepth > 0) {
           this.emit(IROpcode.POP); // Pop unused expression result
         }
         break;
@@ -228,15 +229,15 @@ export class IRGenerator {
     const extra = { operandName: name };
 
     // Check if it's a local variable
-    if (this.context.varLookup.has(name)) {
-      const varIndex = this.context.varLookup.get(name)!;
+    if (this.ctx.varLookup.has(name)) {
+      const varIndex = this.ctx.varLookup.get(name)!;
       this.emit(IROpcode.LOAD_VAR, varIndex, extra);
       return;
     }
 
     // Check if it's a global variable
-    if (this.context.gVarLookup.has(name)) {
-      const varIndex = this.context.gVarLookup.get(name)!;
+    if (this.ctx.gVarLookup.has(name)) {
+      const varIndex = this.ctx.gVarLookup.get(name)!;
       this.emit(IROpcode.LOAD_GLOBAL, varIndex, extra);
       return;
     }
@@ -315,8 +316,8 @@ export class IRGenerator {
     // Handle different assignment operators
     switch (node.operator) {
       case AssignmentOperator.Assign:
-        if (this.context.gVarLookup.has(varName)) {
-          const varIndex = this.context.gVarLookup.get(varName)!;
+        if (this.ctx.gVarLookup.has(varName)) {
+          const varIndex = this.ctx.gVarLookup.get(varName)!;
           this.emit(IROpcode.STORE_GLOBAL, varIndex, extra);
         } else {
           const varIndex = this.getOrAddLocal(varName);
@@ -329,8 +330,8 @@ export class IRGenerator {
         this.emit(IROpcode.DUP);
 
         // Store the value
-        if (this.context.gVarLookup.has(varName)) {
-          const varIndex = this.context.gVarLookup.get(varName)!;
+        if (this.ctx.gVarLookup.has(varName)) {
+          const varIndex = this.ctx.gVarLookup.get(varName)!;
           this.emit(IROpcode.STORE_GLOBAL, varIndex, extra);
         } else {
           const varIndex = this.getOrAddLocal(varName);
@@ -374,7 +375,7 @@ export class IRGenerator {
       }
 
       // Check if it's a builtin function
-      this.context.builtinFunctions.add(funcName);
+      this.ctx.builtinFuncs.add(funcName);
       this.emit(IROpcode.CALL_BUILTIN, { name: funcName, argCount: node.arguments.length });
     } else {
       // Dynamic function call
@@ -422,33 +423,33 @@ export class IRGenerator {
     // Handle constants - store them in the constants array and use index as operand
     let finalOperand = operand;
     if (opcode === IROpcode.LOAD_CONST && operand !== undefined) {
-      const constIndex = this.context.constants.length;
-      this.context.constants.push(operand);
+      const constIndex = this.ctx.constants.length;
+      this.ctx.constants.push(operand);
       finalOperand = constIndex;
     }
 
     const instruction: IRInstruction = {
-      id: this.context.instructions.length,
+      id: this.ctx.instructions.length,
       opcode,
       operand: finalOperand,
       extra,
     };
 
-    this.context.instructions.push(instruction);
+    this.ctx.instructions.push(instruction);
     this.updateStackDepth(opcode, finalOperand);
   }
 
   private updateStackDepth(opcode: IROpcode, operand?: any): void {
     const stackEffect = this.getStackEffect(opcode, operand);
 
-    this.context.currentStackDepth -= stackEffect.pop;
-    this.context.currentStackDepth += stackEffect.push;
+    this.ctx.curStackDepth -= stackEffect.pop;
+    this.ctx.curStackDepth += stackEffect.push;
 
-    if (this.context.currentStackDepth > this.context.maxStackDepth) {
-      this.context.maxStackDepth = this.context.currentStackDepth;
+    if (this.ctx.curStackDepth > this.ctx.maxStackDepth) {
+      this.ctx.maxStackDepth = this.ctx.curStackDepth;
     }
 
-    if (this.context.currentStackDepth < 0) {
+    if (this.ctx.curStackDepth < 0) {
       throw new Error(`Stack underflow at instruction ${opcode}`);
     }
   }
@@ -505,25 +506,25 @@ export class IRGenerator {
   }
 
   private getOrAddLocal(name: string): number {
-    if (!this.context.varLookup.has(name)) {
-      const index = this.context.varLookup.size;
-      this.context.varLookup.set(name, index);
+    if (!this.ctx.varLookup.has(name)) {
+      const index = this.ctx.varLookup.size;
+      this.ctx.varLookup.set(name, index);
       return index;
     }
-    return this.context.varLookup.get(name)!;
+    return this.ctx.varLookup.get(name)!;
   }
 
   private getOrAddGlobal(name: string): number {
-    if (!this.context.gVarLookup.has(name)) {
-      const index = this.context.gVarLookup.size;
-      this.context.gVarLookup.set(name, index);
+    if (!this.ctx.gVarLookup.has(name)) {
+      const index = this.ctx.gVarLookup.size;
+      this.ctx.gVarLookup.set(name, index);
       return index;
     }
-    return this.context.gVarLookup.get(name)!;
+    return this.ctx.gVarLookup.get(name)!;
   }
 
   private createLabel(): string {
-    return `L${this.context.labelCounter++}`;
+    return `L${this.ctx.labelCounter++}`;
   }
 
   private placeLabel(label: string): void {
@@ -531,6 +532,6 @@ export class IRGenerator {
     // For now, we'll just add a NOP with the label info
     // Note: Labels don't have associated nodes, so we don't set curNode here
     this.emit(IROpcode.NOP, { label });
-    this.context.labels.push({ id: label, position: this.context.instructions.length - 1 });
+    this.ctx.labels.push({ id: label, pos: this.ctx.instructions.length - 1 });
   }
 }
