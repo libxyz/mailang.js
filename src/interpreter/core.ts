@@ -17,14 +17,14 @@ export interface MarketData {
 
 export interface ExecutionResult {
   output: Record<string, any>;
-  vars: Map<string | Symbol, any>;
+  vars: Map<string | symbol, any>;
   globalVars: Map<string, any>;
   lastResult?: any;
 }
 
 // Execution context utilities
 export interface ExecCtx {
-  vars: Map<string | Symbol, any>;
+  vars: Map<string | symbol, any>;
   globalVars: Map<string, any>;
   funcs: Map<string, any>;
   state: Record<string, any>;
@@ -72,7 +72,7 @@ export interface VMContext {
   globals: any[];
   output: Record<string, any>;
   constants: any[];
-  program: IRProgram;
+  instructions: IRInstruction[];
   pc: number; // program counter
 }
 
@@ -80,8 +80,8 @@ export class Interpreter {
   private program: IRProgram;
   private ctx: VMContext;
   private round: number = 0;
-  private curInst: IRInstruction | undefined;
   private localStates: Map<number, Record<string, any>> = new Map();
+  maxStackSize: number = 1000; // Limit stack size to prevent overflow
 
   constructor(program: IRProgram) {
     this.program = program;
@@ -91,7 +91,7 @@ export class Interpreter {
       globals: [],
       output: {},
       constants: program.constants,
-      program,
+      instructions: program.main.instructions,
       pc: 0,
     };
 
@@ -128,8 +128,9 @@ export class Interpreter {
     }
   }
 
-  private newError(type: ErrorType, message: string, context?: Record<string, any>): MaiError {
-    return newError(type, message, this.curInst?.extra?.loc, context);
+  private newErr(type: ErrorType, message: string, context?: Record<string, any>): MaiError {
+    const inst = this.ctx.instructions[this.ctx.pc];
+    return newError(type, message, inst?.extra?.loc, context);
   }
 
   private executeFunction(func: IRFunction): void {
@@ -142,7 +143,7 @@ export class Interpreter {
         if (error instanceof MaiError) {
           throw error;
         }
-        throw this.newError(
+        throw this.newErr(
           ErrorType.RUNTIME_ERROR,
           `Runtime error at instruction ${this.ctx.pc}: ${(error as Error).message}`,
           { instruction: instruction.opcode, operand: instruction.operand }
@@ -154,7 +155,6 @@ export class Interpreter {
   }
 
   private executeInstruction(instruction: IRInstruction): void {
-    this.curInst = instruction;
     const { opcode, operand, extra } = instruction;
 
     switch (opcode) {
@@ -178,17 +178,21 @@ export class Interpreter {
 
       case IROpcode.INIT_GLOBAL:
         if (this.round > 1) break;
+        this.ctx.globals[operand] = this.pop();
+        break;
+
       case IROpcode.STORE_GLOBAL:
         this.ctx.globals[operand] = this.pop();
         break;
 
-      case IROpcode.STORE_OUTPUT:
+      case IROpcode.STORE_OUTPUT: {
         const outputKey = extra?.operandName;
         if (outputKey) this.ctx.output[outputKey] = this.pop();
         break;
+      }
 
       case IROpcode.UNARY_MINUS:
-      case IROpcode.UNARY_PLUS:
+      case IROpcode.UNARY_PLUS: {
         const value = this.pop();
         if (value === null) {
           this.push(null);
@@ -196,6 +200,7 @@ export class Interpreter {
         }
         this.push(opcode === IROpcode.UNARY_MINUS ? -this.checkNumber(value) : this.checkNumber(value));
         break;
+      }
 
       // binary operations
       case IROpcode.ADD:
@@ -209,7 +214,7 @@ export class Interpreter {
         break;
       case IROpcode.DIV:
         this.binaryOp((a, b) => {
-          if (b === 0) throw this.newError(ErrorType.DIVISION_BY_ZERO, 'Division by zero');
+          if (b === 0) throw this.newErr(ErrorType.DIVISION_BY_ZERO, 'Division by zero');
           return a / b;
         });
         break;
@@ -282,7 +287,7 @@ export class Interpreter {
 
         const builtinFunc = funcRegistry.get(name);
         if (!builtinFunc) {
-          throw this.newError(ErrorType.INVALID_FUNCTION_CALL, `Cannot call non-function`);
+          throw this.newErr(ErrorType.INVALID_FUNCTION_CALL, `Cannot call non-function`);
         }
 
         let state = this.localStates.get(instruction.id);
@@ -313,7 +318,7 @@ export class Interpreter {
         const func = this.pop();
 
         if (typeof func !== 'function') {
-          throw this.newError(ErrorType.INVALID_FUNCTION_CALL, `Cannot call non-function: ${func}`);
+          throw this.newErr(ErrorType.INVALID_FUNCTION_CALL, `Cannot call non-function: ${func}`);
         }
 
         const result = func(...args);
@@ -349,7 +354,7 @@ export class Interpreter {
         break;
 
       default:
-        throw this.newError(ErrorType.RUNTIME_ERROR, `Unknown opcode: ${opcode}`, { opcode });
+        throw this.newErr(ErrorType.RUNTIME_ERROR, `Unknown opcode: ${opcode}`, { opcode });
     }
   }
 
@@ -366,18 +371,21 @@ export class Interpreter {
   // Stack manipulation helpers
   private push(value: any): void {
     this.ctx.stack.push(value);
+    if (this.ctx.stack.length > this.maxStackSize) {
+      throw this.newErr(ErrorType.RUNTIME_ERROR, 'Stack overflow');
+    }
   }
 
   private pop(): any {
     if (this.ctx.stack.length === 0) {
-      throw this.newError(ErrorType.RUNTIME_ERROR, 'Stack underflow');
+      throw this.newErr(ErrorType.RUNTIME_ERROR, 'Stack underflow');
     }
     return this.ctx.stack.pop();
   }
 
   private peek(): any {
     if (this.ctx.stack.length === 0) {
-      throw this.newError(ErrorType.RUNTIME_ERROR, 'Stack underflow');
+      throw this.newErr(ErrorType.RUNTIME_ERROR, 'Stack underflow');
     }
     return this.ctx.stack[this.ctx.stack.length - 1];
   }
@@ -385,7 +393,7 @@ export class Interpreter {
   // Utility methods
   private checkNumber(value: any): number {
     if (typeof value !== 'number') {
-      throw this.newError(ErrorType.TYPE_ERROR, `Expected number, got ${typeof value}`, { value });
+      throw this.newErr(ErrorType.TYPE_ERROR, `Expected number, got ${typeof value}`, { value });
     }
     return value;
   }
@@ -397,7 +405,7 @@ export class Interpreter {
   private resolveLabel(label: string): number {
     const labelInfo = this.program.labels.get(label);
     if (labelInfo === undefined) {
-      throw this.newError(ErrorType.RUNTIME_ERROR, `Undefined label: ${label}`, { label });
+      throw this.newErr(ErrorType.RUNTIME_ERROR, `Undefined label: ${label}`, { label });
     }
     return labelInfo.pos;
   }
@@ -408,7 +416,7 @@ export class Interpreter {
     }
 
     const message = error instanceof Error ? error.message : String(error);
-    return this.newError(ErrorType.RUNTIME_ERROR, message);
+    return this.newErr(ErrorType.RUNTIME_ERROR, message);
   }
 
   private createVarMap(values: any[], names?: string[]): Map<string, any> {
@@ -426,7 +434,7 @@ export class Interpreter {
 
 // === Helpers ===
 
-export function getVar(ctx: ExecCtx, name: string | Symbol): any {
+export function getVar(ctx: ExecCtx, name: string | symbol): any {
   if (ctx.vars.has(name)) {
     return ctx.vars.get(name);
   }

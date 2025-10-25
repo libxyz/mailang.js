@@ -39,6 +39,8 @@ export enum BinaryOperator {
   LogicalOr = '||',
 }
 
+export const binaryOpSet: Set<string> = new Set(Object.values(BinaryOperator));
+
 export enum AssignmentOperator {
   Assign = ':=',
   DisplayAssign = ':',

@@ -26,7 +26,6 @@ export class MaiError extends Error {
     this.type = type;
     this.location = location;
     this.context = context;
-
   }
 
   toString(): string {

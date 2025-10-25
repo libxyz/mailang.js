@@ -1,13 +1,13 @@
 import * as mai from '../src';
 
 const script = `
-VARIABLE: x := 0, CNT := 0;
-PRINT("[g] x", x, "CNT", CNT);
-CNT := CNT + 1;
+VARIABLE: x := 0, CNT := 0
+PRINT("[g] x", x, "CNT", CNT)
+CNT := CNT + 1
 
 IF CNT <= 1 THEN BEGIN
-  x := x + 10;
-  PRINT("Inside IF [g] x", x, "CNT", CNT);
+  x := x + 10
+  PRINT("Inside IF [g] x", x, "CNT", CNT)
 END 
 ELSE IF CNT <= 2 THEN BEGIN
   x := x + 100;

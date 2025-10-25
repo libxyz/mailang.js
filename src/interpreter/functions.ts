@@ -2,8 +2,6 @@ import { ExecFunc, ExecCtx } from '../utils';
 import { StatsRingBuf } from '../utils/ring-buffer';
 import typia from 'typia';
 
-type NumberMaybe = number | null;
-
 const registry = new Map<string, ExecFunc>();
 const identity = <T>(x: T): T => x;
 const opts = {

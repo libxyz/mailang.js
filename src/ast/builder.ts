@@ -1,30 +1,21 @@
-import { CstNode, IToken, CstElement, tokenMatcher } from 'chevrotain';
+import { CstElement, IToken, CstNode as RawCstNode } from 'chevrotain';
+import { RuleType } from '../parser/parser';
+import { ASTNodeType, AssignmentOperator, BinaryOperator, UnaryOperator, binaryOpSet } from './enums';
 import * as AST from './types';
-import { ASTNodeType, BinaryOperator, AssignmentOperator, UnaryOperator } from './enums';
-import {
-  Plus,
-  Minus,
-  Multiply,
-  Divide,
-  GreaterThan,
-  LessThan,
-  GreaterThanOrEqual,
-  LessThanOrEqual,
-  NotEqual,
-  Equal,
-  LogicalAnd,
-  LogicalOr,
-} from '../lexer/tokens';
+
+interface CstNode extends RawCstNode {
+  readonly children: Record<RuleType, CstElement[]>;
+}
 
 function getLocation(token: IToken): AST.SourceLocation {
   return {
     start: {
-      line: token.startLine ?? 1,
-      column: token.startColumn ?? 1,
+      line: token.startLine ?? 0,
+      column: token.startColumn ?? 0,
     },
     end: {
-      line: token.endLine ?? 1,
-      column: token.endColumn ?? 1,
+      line: token.endLine ?? 0,
+      column: token.endColumn ?? 0,
     },
   };
 }
@@ -55,22 +46,10 @@ function isCstNode(element: CstElement): element is CstNode {
 export class ASTBuilder {
   private getOperatorImage(operator: CstElement): BinaryOperator {
     if (!isToken(operator)) throw new Error('Expected token');
-
-    // Use tokenMatcher to check token types directly - much more reliable than string matching
-    if (tokenMatcher(operator, Plus)) return BinaryOperator.Plus;
-    if (tokenMatcher(operator, Minus)) return BinaryOperator.Minus;
-    if (tokenMatcher(operator, Multiply)) return BinaryOperator.Multiply;
-    if (tokenMatcher(operator, Divide)) return BinaryOperator.Divide;
-    if (tokenMatcher(operator, GreaterThan)) return BinaryOperator.GreaterThan;
-    if (tokenMatcher(operator, LessThan)) return BinaryOperator.LessThan;
-    if (tokenMatcher(operator, GreaterThanOrEqual)) return BinaryOperator.GreaterThanOrEqual;
-    if (tokenMatcher(operator, LessThanOrEqual)) return BinaryOperator.LessThanOrEqual;
-    if (tokenMatcher(operator, NotEqual)) return BinaryOperator.NotEqual;
-    if (tokenMatcher(operator, Equal)) return BinaryOperator.Equal;
-    if (tokenMatcher(operator, LogicalAnd)) return BinaryOperator.LogicalAnd;
-    if (tokenMatcher(operator, LogicalOr)) return BinaryOperator.LogicalOr;
-
-    throw new Error(`Unknown binary operator token: ${operator.tokenType.name}`);
+    if (binaryOpSet.has(operator.image)) {
+      return operator.image as BinaryOperator;
+    }
+    throw new Error(`Unknown binary operator token: ${operator.tokenType.name}` + ` with image: ${operator.image}`);
   }
 
   private visit(ctx: any): any {
@@ -122,12 +101,12 @@ export class ASTBuilder {
 
     return {
       type: ASTNodeType.Program,
-      body: statements,
+      body: statements.filter(stmt => stmt !== undefined),
       loc: getNodeLocation(ctx),
     };
   }
 
-  public visitStatement(ctx: CstNode): AST.Statement {
+  public visitStatement(ctx: CstNode): AST.Statement | undefined {
     // Try each statement type
     if (ctx.children.semicolonStatement) {
       const stmtElement = ctx.children.semicolonStatement[0];
@@ -139,8 +118,6 @@ export class ASTBuilder {
       if (!isCstNode(stmtElement)) throw new Error('Expected CST node');
       return this.visitNoSemicolonStatement(stmtElement);
     }
-
-    throw new Error('Unknown statement type');
   }
 
   public visitSemicolonStatement(ctx: CstNode): AST.Statement {
@@ -260,7 +237,7 @@ export class ASTBuilder {
 
     return {
       type: ASTNodeType.BlockStatement,
-      body: statements,
+      body: statements.filter(stmt => stmt !== undefined),
       loc: getNodeLocation(ctx),
     };
   }
@@ -554,20 +531,6 @@ export class ASTBuilder {
         name: element.image,
         loc: getLocation(element),
       };
-    }
-
-    // Reserved keywords O, H, L, C
-    const reservedTokens = ['O', 'H', 'L', 'C'];
-    for (const reserved of reservedTokens) {
-      if (ctx.children[reserved]) {
-        const element = ctx.children[reserved][0];
-        if (!isToken(element)) continue;
-        return {
-          type: ASTNodeType.Identifier,
-          name: element.image,
-          loc: getLocation(element),
-        };
-      }
     }
 
     if (ctx.children.expression) {
