@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mai Lang Parser - Browser Test</title>
+    <title>mailang.js example</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -160,11 +160,14 @@
             word-wrap: break-word;
         }
     </style>
+
+    <!-- 包含打包后的 Mai Lang Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/mailang.js@latest/dist/browser/mailang.umd.min.js"></script>
 </head>
 
 <body>
     <div class="container">
-        <h1 class="main-title">Mai Lang Parser - Browser Test</h1>
+        <h1 class="main-title">Mai语言测试</h1>
 
         <!-- Tab Navigation -->
         <div class="tab-nav">
@@ -215,9 +218,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 包含打包后的 Mai Lang Parser -->
-    <script src="https://cdn.jsdelivr.net/npm/mailang.js/dist/browser/mailang.umd.min.js"></script>
 
     <script>
         // Tab switching functionality
@@ -348,14 +348,12 @@
 
         function setDefaultValues() {
             // 基础解析测试默认代码
-            document.getElementById('basicCode').value = `VARIABLE: x := 5 + 3, y := x * 2
-RETURN y`;
+            document.getElementById('basicCode').value = `VARIABLE: x := 5 + 3, y := x * 2`;
 
             // 金融指标测试默认代码
             document.getElementById('financialCode').value = `MA5 := MA(C, 5)
 MA10 := MA(C, 10)
-CROSSOVER := CROSS(MA5, MA10)
-RETURN CROSSOVER`;
+CROSSOVER := CROSS(MA5, MA10)`;
 
             // IR输出测试默认代码
             document.getElementById('irCode').value = `VARIABLE: x := 0, CNT := 0
@@ -364,12 +362,10 @@ IF CNT <= 1 THEN BEGIN
 END
 ELSE BEGIN
   x := x + 100
-END
-RETURN x`;
+END`;
 
             // 错误处理测试默认代码
-            document.getElementById('errorCode').value = `VARIABLE: x := 5 / 0
-RETURN x`;
+            document.getElementById('errorCode').value = `VARIABLE: x := 5 / 0`;
         }
     </script>
 </body>
