@@ -7,6 +7,8 @@ import { MaiError, newError } from './err';
 import { ErrorType } from '../ast/enums';
 import { dump } from '../ir/helper';
 
+const DEBUG = false;
+
 export interface MarketData {
   O: number; // Open price
   H: number; // High price
@@ -37,20 +39,29 @@ export interface ExecFunc<TArgs = any, Output = any> {
   execute: (args: TArgs, context: ExecCtx) => Output;
 }
 
+export interface VMOptions {
+  logger?: (...args: any[]) => void;
+  userGlobals?: { name: string; value: any }[];
+}
+
 export class MaiVM {
   private ast: Program;
   private ir: IRProgram;
   private executor: Interpreter;
 
-  constructor(program: string | Program, extraGlobals: string[] = []) {
+  constructor(program: string | Program, options?: VMOptions) {
     if (typeof program === 'string') {
       const parseResult = parseMai(program);
       this.ast = parseResult.ast;
     } else {
       this.ast = program;
     }
-    this.ir = new IRGenerator({ optimize: true, debug: true }).gen(this.ast, extraGlobals);
-    this.executor = new Interpreter(this.ir);
+    const userGlobals = options?.userGlobals || [];
+    this.ir = new IRGenerator({ optimize: true, debug: true }).gen(
+      this.ast,
+      userGlobals.map(g => g.name)
+    );
+    this.executor = new Interpreter(this.ir, options);
   }
 
   execute(marketData: MarketData): ExecutionResult {
@@ -81,10 +92,13 @@ export class Interpreter {
   private ctx: VMContext;
   private round: number = 0;
   private localStates: Map<number, Record<string, any>> = new Map();
+  private options?: VMOptions;
+
   maxStackSize: number = 1000; // Limit stack size to prevent overflow
 
-  constructor(program: IRProgram) {
+  constructor(program: IRProgram, options?: VMOptions) {
     this.program = program;
+    this.options = options;
     this.ctx = {
       stack: [],
       locals: [],
@@ -98,6 +112,13 @@ export class Interpreter {
     // Initialize arrays with proper sizes
     this.ctx.locals = new Array(program.main.localsCount);
     this.ctx.globals = new Array(program.main.globalsCount);
+
+    for (const userGlobal of options?.userGlobals || []) {
+      const index = this.program.gLookup.get(userGlobal.name);
+      if (index !== undefined) {
+        this.ctx.globals[index] = userGlobal.value;
+      }
+    }
   }
 
   execute(marketData: MarketData): ExecutionResult {
@@ -128,8 +149,16 @@ export class Interpreter {
     }
   }
 
-  private newErr(type: ErrorType, message: string, context?: Record<string, any>): MaiError {
+  private newErr(type: ErrorType, message: string): MaiError {
     const inst = this.ctx.instructions[this.ctx.pc];
+    const context: Record<string, any> = {
+      instId: inst?.id,
+      op: IROpcode[inst.opcode],
+    };
+    if (inst.extra?.operandName) {
+      context['operand'] = inst.extra.operandName;
+    }
+
     return newError(type, message, inst?.extra?.loc, context);
   }
 
@@ -143,11 +172,7 @@ export class Interpreter {
         if (error instanceof MaiError) {
           throw error;
         }
-        throw this.newErr(
-          ErrorType.RUNTIME_ERROR,
-          `Runtime error at instruction ${this.ctx.pc}: ${(error as Error).message}`,
-          { instruction: instruction.opcode, operand: instruction.operand }
-        );
+        throw this.newErr(ErrorType.RUNTIME_ERROR, `${(error as Error).message}`);
       }
 
       this.ctx.pc++;
@@ -155,6 +180,14 @@ export class Interpreter {
   }
 
   private executeInstruction(instruction: IRInstruction): void {
+    if (DEBUG)
+      console.debug(
+        `PC=${this.ctx.pc} OP=${IROpcode[this.ctx.instructions[this.ctx.pc].opcode]} EXECUTING.`,
+        'STACK:',
+        this.ctx.stack,
+        'LINE',
+        this.ctx.instructions[this.ctx.pc].extra?.loc?.start.line
+      );
     const { opcode, operand, extra } = instruction;
 
     switch (opcode) {
@@ -302,7 +335,7 @@ export class Interpreter {
           funcs: funcRegistry,
           state,
           output: this.ctx.output,
-          log: console.log.bind(console),
+          log: this.options?.logger || console.log,
         });
 
         this.push(result);
@@ -354,7 +387,7 @@ export class Interpreter {
         break;
 
       default:
-        throw this.newErr(ErrorType.RUNTIME_ERROR, `Unknown opcode: ${opcode}`, { opcode });
+        throw this.newErr(ErrorType.RUNTIME_ERROR, `Unknown opcode: ${opcode}`);
     }
   }
 
@@ -393,7 +426,7 @@ export class Interpreter {
   // Utility methods
   private checkNumber(value: any): number {
     if (typeof value !== 'number') {
-      throw this.newErr(ErrorType.TYPE_ERROR, `Expected number, got ${typeof value}`, { value });
+      throw this.newErr(ErrorType.TYPE_ERROR, `Expected number, got ${typeof value}`);
     }
     return value;
   }
@@ -405,7 +438,7 @@ export class Interpreter {
   private resolveLabel(label: string): number {
     const labelInfo = this.program.labels.get(label);
     if (labelInfo === undefined) {
-      throw this.newErr(ErrorType.RUNTIME_ERROR, `Undefined label: ${label}`, { label });
+      throw this.newErr(ErrorType.RUNTIME_ERROR, `Undefined label: ${label}`);
     }
     return labelInfo.pos;
   }
