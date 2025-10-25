@@ -167,8 +167,7 @@ export class IRGenerator {
   private generateBlockStatement(node: AST.BlockStatement): void {
     for (let i = 0; i < node.body.length; i++) {
       const statement = node.body[i];
-      const isLastStatement = i === node.body.length - 1;
-      this.generateStatement(statement, isLastStatement);
+      this.generateStatement(statement);
     }
   }
 
@@ -531,10 +530,7 @@ export class IRGenerator {
   }
 
   private placeLabel(label: string): void {
-    // In a more sophisticated implementation, we'd track label positions
-    // For now, we'll just add a NOP with the label info
-    // Note: Labels don't have associated nodes, so we don't set curNode here
+    this.ctx.labels.push({ id: label, pos: this.ctx.instructions.length });
     this.emit(IROpcode.NOP, { label });
-    this.ctx.labels.push({ id: label, pos: this.ctx.instructions.length - 1 });
   }
 }

@@ -297,7 +297,7 @@ export function parse(inputText: string) {
   const lexResult = MaiLexer.tokenize(inputText);
 
   if (lexResult.errors.length > 0) {
-    throw new Error('[LexingErr] ' + lexResult.errors.join('\n'));
+    throw new Error('[LexingErr] ' + lexResult.errors.map(e => e.message).join('\n'));
   }
 
   parser.input = lexResult.tokens;

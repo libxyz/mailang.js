@@ -2,7 +2,7 @@ import * as mai from '../src';
 import { MaiError } from '../src/interpreter';
 
 const script = `
-VARIABLE: x := 0, CNT := 0;
+VARIABLE: x := 0, CNT := 1;
 PRINT("[g] x", x, "CNT", CNT);
 CNT := CNT + 1;
 
@@ -28,7 +28,11 @@ K: MA3;
 `;
 
 try {
-  const engine = new mai.MaiExecutor(script.trim());
+  const engine = new mai.MaiExecutor(script.trim(), {
+    userGlobals: [{ name: 'T', value: 0 }],
+  });
+  
+  console.log(engine.dumpIR());
   // console.log('Generated IR Program:', JSON.stringify(engine.getIRProgram(), null, 2));
   let result = engine.execute({
     O: 100,

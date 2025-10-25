@@ -20,6 +20,7 @@
         /* Tab navigation styles */
         .tab-nav {
             display: flex;
+            height: 50px;
             border-bottom: 2px solid #dee2e6;
             margin-bottom: 20px;
             background: white;
@@ -53,30 +54,15 @@
         /* Tab content styles */
         .tab-content {
             display: none;
-            background: white;
-            padding: 25px;
-            border-radius: 0 0 8px 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
         }
 
         .tab-content.active {
             display: block;
         }
 
-        .tab-content h2 {
-            margin-top: 0;
-            color: #343a40;
-            border-bottom: 2px solid #e9ecef;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
         textarea {
             width: 100%;
-            height: 120px;
-            margin: 15px 0;
-            padding: 12px;
+            min-height: 200px;
             border: 2px solid #e9ecef;
             border-radius: 6px;
             font-family: 'Courier New', monospace;
@@ -92,8 +78,7 @@
         }
 
         button {
-            padding: 12px 24px;
-            margin: 5px;
+            padding: 5px 24px;
             background: #007bff;
             color: white;
             border: none;
@@ -115,7 +100,6 @@
             padding: 15px;
             margin: 15px 0;
             border-radius: 6px;
-            border-left: 4px solid #6c757d;
             font-family: 'Courier New', monospace;
             font-size: 13px;
             line-height: 1.5;
@@ -147,6 +131,57 @@
             margin-bottom: 25px;
         }
 
+        .candle-data-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .candle-data-section label {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .candle-data-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .candle-data-actions button {
+            padding: 8px 16px;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .candle-data-format {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 0;
+        }
+
+        .file-input-label:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+        }
+
         .test-section label {
             display: block;
             margin-bottom: 8px;
@@ -162,7 +197,7 @@
     </style>
 
     <!-- 包含打包后的 Mai Lang Parser -->
-    <script src="https://cdn.jsdelivr.net/npm/mailang.js@latest/dist/browser/mailang.umd.min.js"></script>
+    <script src="../dist/browser/mailang.iife.js"></script>
 </head>
 
 <body>
@@ -171,15 +206,33 @@
 
         <!-- Tab Navigation -->
         <div class="tab-nav">
-            <button class="tab-button active" onclick="showTab('basic')">基础解析测试</button>
-            <button class="tab-button" onclick="showTab('financial')">金融指标测试</button>
+            <button class="tab-button active" onclick="showTab('run')">运行测试</button>
+            <button class="tab-button" onclick="showTab('ast')">AST解析测试</button>
             <button class="tab-button" onclick="showTab('ir')">IR 输出测试</button>
             <button class="tab-button" onclick="showTab('error')">错误处理测试</button>
         </div>
 
         <!-- Tab Content -->
-        <div id="basic" class="tab-content active">
-            <h2>基础解析测试</h2>
+        <div id="run" class="tab-content active">
+            <div class="test-section candle-data-section">
+                <label>K线数据</label>
+                <div class="candle-data-format">格式: 时间,开盘,最高,最低,收盘[,成交量] - 每行一条</div>
+                <div class="candle-data-actions">
+                    <button onclick="loadSampleCandleData()">加载示例数据</button>
+                    <button onclick="clearCandleData()">清空数据</button>
+                </div>
+                <textarea id="candleData" rows="6"></textarea>
+                <div id="candleInfo" class="output"></div>
+            </div>
+            <div class="test-section">
+                <label>输入代码:</label>
+                <textarea id="runCode"></textarea>
+                <button onclick="testRun()">运行</button>
+                <div id="runOutput" class="output"></div>
+            </div>
+        </div>
+
+        <div id="ast" class="tab-content">
             <div class="test-section">
                 <label>输入代码:</label>
                 <textarea id="basicCode"></textarea>
@@ -188,18 +241,7 @@
             </div>
         </div>
 
-        <div id="financial" class="tab-content">
-            <h2>金融指标测试</h2>
-            <div class="test-section">
-                <label>输入代码:</label>
-                <textarea id="financialCode"></textarea>
-                <button onclick="testFinancial()">测试金融指标</button>
-                <div id="financialOutput" class="output"></div>
-            </div>
-        </div>
-
         <div id="ir" class="tab-content">
-            <h2>IR 输出测试</h2>
             <div class="test-section">
                 <label>输入代码:</label>
                 <textarea id="irCode"></textarea>
@@ -209,7 +251,6 @@
         </div>
 
         <div id="error" class="tab-content">
-            <h2>错误处理测试</h2>
             <div class="test-section">
                 <label>输入代码:</label>
                 <textarea id="errorCode"></textarea>
@@ -256,7 +297,7 @@
             } catch (error) {
                 showOutput('basicOutput', `
                     <strong>解析失败:</strong><br>
-                    ${error.message}
+                    ${error}
                 `, true);
             }
         }
@@ -289,7 +330,7 @@
             } catch (error) {
                 showOutput('financialOutput', `
                     <strong>执行失败:</strong><br>
-                    ${error.message}
+                    ${error}
                 `, true);
             }
         }
@@ -307,7 +348,7 @@
             } catch (error) {
                 showOutput('irOutput', `
                     <strong>IR 生成失败:</strong><br>
-                    ${error.message}
+                    ${error}
                 `, true);
             }
         }
@@ -330,7 +371,7 @@
                 showOutput('errorOutput', `
                     <strong>错误捕获成功:</strong><br>
                     错误类型: ${error.name || 'Error'}<br>
-                    错误信息: ${error.message}<br>
+                    错误信息: ${error}<br>
                     这是预期的行为，说明错误处理正常工作。
                 `);
             }
@@ -343,17 +384,161 @@
 
             console.log('mailang loaded:', typeof mailang);
             console.log('Available functions:', Object.keys(mailang));
-            testBasicParse();
+
+            // 加载默认示例数据并运行测试
+            loadSampleCandleData();
+            testRun();
+
+            // 添加K线数据输入监听
+            document.getElementById('candleData').addEventListener('input', updateCandleInfo);
         };
 
-        function setDefaultValues() {
-            // 基础解析测试默认代码
-            document.getElementById('basicCode').value = `VARIABLE: x := 5 + 3, y := x * 2`;
+        function parseCandleData(candleText) {
+            if (!candleText || !candleText.trim()) {
+                return [];
+            }
 
-            // 金融指标测试默认代码
-            document.getElementById('financialCode').value = `MA5 := MA(C, 5)
+            const lines = candleText.trim().split('\n').filter(line => line.trim());
+            const candles = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                const parts = line.split(',').map(p => p.trim()).filter(p => p);
+                if (parts.length < 5) {
+                    throw new Error(`第 ${i + 1} 行数据格式错误: ${line}`);
+                }
+
+                const [timestamp, open, high, low, close, volume] = parts;
+                const prices = [open, high, low, close].map(p => {
+                    const num = parseFloat(p);
+                    if (isNaN(num) || num < 0) {
+                        throw new Error(`第 ${i + 1} 行价格格式错误: ${p}`);
+                    }
+                    return num;
+                });
+
+                const [o, h, l, c] = prices;
+                candles.push({
+                    timestamp: timestamp,
+                    O: o,
+                    H: h,
+                    L: l,
+                    C: c,
+                    V: volume ? parseFloat(volume) : undefined
+                });
+            }
+
+            return candles;
+        }
+
+        function loadSampleCandleData() {
+            // 固定的简单示例数据，确保价格逻辑正确
+            const sampleData = [
+                "2024-01-01 09:30,100.00,102.50,99.50,101.20,1500",
+                "2024-01-01 09:31,101.20,103.80,100.80,102.60,1800",
+                "2024-01-01 09:32,102.60,104.20,102.00,103.40,2200",
+                "2024-01-01 09:33,103.40,105.10,103.00,104.80,1900",
+                "2024-01-01 09:34,104.80,106.50,104.30,105.90,2500",
+                "2024-01-01 09:35,105.90,107.20,105.40,106.70,2100",
+                "2024-01-01 09:36,106.70,108.30,106.20,107.80,2300",
+                "2024-01-01 09:37,107.80,109.10,107.30,108.50,1700"
+            ];
+
+            document.getElementById('candleData').value = sampleData.join('\n');
+            updateCandleInfo();
+        }
+
+        function clearCandleData() {
+            document.getElementById('candleData').value = '';
+            document.getElementById('candleInfo').innerHTML = '';
+        }
+
+        function updateCandleInfo() {
+            try {
+                const candleText = document.getElementById('candleData').value;
+                if (!candleText.trim()) {
+                    document.getElementById('candleInfo').innerHTML = '';
+                    return;
+                }
+
+                const candles = parseCandleData(candleText);
+                if (candles.length === 0) {
+                    document.getElementById('candleInfo').innerHTML = '';
+                    return;
+                }
+
+                const prices = candles.map(c => [c.O, c.H, c.L, c.C]).flat();
+                const minPrice = Math.min(...prices);
+                const maxPrice = Math.max(...prices);
+
+                document.getElementById('candleInfo').innerHTML = `
+                    <strong>K线数据统计</strong><br>
+                    总K线数: ${candles.length} 根<br>
+                    时间范围: ${candles[0]?.timestamp} → ${candles[candles.length - 1]?.timestamp}<br>
+                    价格区间: ${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}
+                `;
+                document.getElementById('candleInfo').className = 'output success';
+            } catch (error) {
+                document.getElementById('candleInfo').innerHTML = `
+                    <strong>数据格式错误:</strong><br>${error.message}
+                `;
+                document.getElementById('candleInfo').className = 'output error';
+            }
+        }
+
+        function testRun() {
+            try {
+                const code = document.getElementById('runCode').value;
+                const candleText = document.getElementById('candleData').value;
+
+                if (!candleText.trim()) {
+                    showOutput('runOutput', '请先输入K线数据', true);
+                    return;
+                }
+
+                const candles = parseCandleData(candleText);
+                const results = [];
+
+                const executor = new mailang.MaiExecutor(code);
+                // 对每根K线执行代码
+                for (let i = 0; i < candles.length; i++) {
+                    const candle = candles[i];
+                    const result = executor.execute(candle);
+
+                    results.push({
+                        timestamp: candle.timestamp,
+                        input: candle,
+                        output: result.output,
+                        variables: Object.fromEntries(result.globalVars)
+                    });
+                }
+
+                // 显示结果概览
+                const summary = results.map(r =>
+                    `${r.timestamp}: 输出=${JSON.stringify(r.output)} 变量=${JSON.stringify(r.variables)}`
+                ).join('\n');
+
+                showOutput('runOutput', `
+                    <strong>运行成功! 共处理 ${results.length} 根K线</strong><br>
+                    <pre>${summary}</pre>
+                `);
+
+            } catch (error) {
+                showOutput('runOutput', `
+                    <strong>运行失败:</strong><br>
+                    ${error.message || error}
+                `, true);
+            }
+        }
+
+        function setDefaultValues() {
+            // 运行测试默认代码
+            document.getElementById('runCode').value = `MA5 := MA(C, 5)
 MA10 := MA(C, 10)
-CROSSOVER := CROSS(MA5, MA10)`;
+CROSSOVER : CROSS(MA5, MA10)`;
+
+            // AST解析测试默认代码
+            document.getElementById('basicCode').value = `VARIABLE: x := 5 + 3, y := x * 2`;
 
             // IR输出测试默认代码
             document.getElementById('irCode').value = `VARIABLE: x := 0, CNT := 0
