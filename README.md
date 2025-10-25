@@ -18,36 +18,14 @@ A TypeScript-based AST parser for the Mai language using Chevrotain. This parser
 ## Installation
 
 ```bash
-npm install mai-lang-parser
+npm install mailang.js
 ```
 
 ## Usage
 
-```typescript
-import { parseMai } from 'mai-lang-parser';
+see [example](./example)
 
-const sourceCode = `
-VARIABLE: price := C, ma5 := MA(C, 5), ma20 := MA(C, 20);
-
-IF ma5 > ma20 THEN BEGIN
-    signal := 1;
-    price ^^ 2;
-END ELSE BEGIN
-    signal := -1;
-    price := C * 0.95;
-END
-
-RETURN signal;
-`;
-
-const result = parseMai(sourceCode);
-
-if (result.errors.length === 0) {
-  console.log('AST:', JSON.stringify(result.ast, null, 2));
-} else {
-  console.error('Parse errors:', result.errors);
-}
-```
+````typescript
 
 ## Language Features
 
@@ -79,7 +57,7 @@ if (result.errors.length === 0) {
 // Line comment
 /* Block comment
    spanning multiple lines */
-```
+````
 
 ## AST Node Types
 

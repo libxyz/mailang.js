@@ -1,12 +1,25 @@
 {
-  "name": "mai-lang-parser",
+  "name": "mailang.js",
   "version": "0.1.0",
-  "description": "Mai language AST parser using Chevrotain",
-  "type": "module",
+  "description": "Mai language parser and executor for financial technical analysis - supports AST parsing and IR-based execution",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "module": "dist/browser/mailang.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/browser/mailang.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./browser": {
+      "import": "./dist/browser/mailang.esm.js",
+      "require": "./dist/browser/mailang.umd.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "build:browser": "rollup -c",
+    "build:all": "npm run build && npm run build:browser",
     "dev": "tsc --watch",
     "test": "jest",
     "lint": "eslint \"src/**/*.{ts,js}\"",
@@ -22,35 +35,61 @@
     "parser",
     "ast",
     "chevrotain",
-    "language"
+    "language",
+    "financial",
+    "technical-analysis",
+    "ma",
+    "ema",
+    "cross",
+    "stock",
+    "trading"
   ],
-  "author": "",
+  "author": "Your Name <your.email@example.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/mailang.git"
+  },
+  "homepage": "https://github.com/yourusername/mailang#readme",
+  "bugs": {
+    "url": "https://github.com/yourusername/mailang/issues"
+  },
   "dependencies": {
     "chevrotain": "^10.5.0",
     "typia": "^9.7.2"
   },
   "devDependencies": {
+    "@eslint/compat": "^1.2.5",
+    "@eslint/js": "^9.22.0",
+    "@rollup/plugin-commonjs": "^28.0.9",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.3.0",
     "@types/jest": "^29.0.0",
     "@types/node": "^20.0.0",
     "@types/prettier": "^2.7.3",
     "eslint": "^9.38.0",
     "eslint-config-prettier": "^10.0.1",
-    "typescript-eslint": "^8.20.0",
     "globals": "^16.0.0",
-    "@eslint/compat": "^1.2.5",
-    "@eslint/js": "^9.22.0",
     "jest": "^29.0.0",
     "prettier": "^3.6.2",
+    "rollup": "^4.52.5",
     "simple-git-hooks": "^2.13.1",
     "ts-jest": "^29.0.0",
     "ts-node": "^10.9.2",
     "ts-patch": "^3.3.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.20.0"
   },
   "files": [
     "dist/**/*"
   ],
+  "browser": {
+    "./dist/index.js": "./dist/browser/mailang.umd.js",
+    "./dist/index.esm.js": "./dist/browser/mailang.esm.js"
+  },
+  "jsdelivr": "dist/browser/mailang.umd.min.js",
+  "unpkg": "dist/browser/mailang.umd.min.js",
   "simple-git-hooks": {
     "pre-commit": "npm run format:check && npm run lint && npm run test"
   }

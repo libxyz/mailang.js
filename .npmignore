@@ -1,0 +1,51 @@
+# Source files
+src/
+example/
+__tests__/
+*.test.ts
+*.spec.ts
+
+# Config files
+tsconfig.json
+tsconfig.build.json
+rollup.config.js
+eslint.config.js
+.prettierrc
+.gitignore
+
+# Development files
+node_modules/
+.nyc_output/
+coverage/
+*.log
+
+# Build artifacts (we only need dist/)
+*.tsbuildinfo
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Package manager files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Git
+.git/
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
