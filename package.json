@@ -28,7 +28,7 @@
     "format": "prettier --write \"src/**/*.{ts,js,json}\" \"**/*.{md,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"**/*.{md,json}\"",
     "format:staged": "prettier --write",
-    "publish": "npm run build:all && npm publish",
+    "prepublishOnly": "npm run build:all",
     "prepare": "ts-patch install"
   },
   "keywords": [
