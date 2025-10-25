@@ -1,6 +1,6 @@
 {
   "name": "mailang.js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mai language parser and executor for financial technical analysis - supports AST parsing and IR-based execution",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -44,16 +44,13 @@
     "stock",
     "trading"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "lihuaru617@outlook.com",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/mailang.git"
+    "url": "https://github.com/libxyz/mailang.js"
   },
-  "homepage": "https://github.com/yourusername/mailang#readme",
-  "bugs": {
-    "url": "https://github.com/yourusername/mailang/issues"
-  },
+  "homepage": "https://github.com/libxyz/mailang.js",
   "dependencies": {
     "chevrotain": "^10.5.0",
     "typia": "^9.7.2"

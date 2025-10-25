@@ -517,10 +517,10 @@ describe('Mai Language Parser', () => {
       }).toThrow();
     });
 
-    test('should throw missing semicolon', () => {
+    test('should not throw missing semicolon', () => {
       expect(() => {
         parseMai('x := 5');
-      }).toThrow();
+      }).not.toThrow();
     });
 
     test('should throw unclosed block', () => {

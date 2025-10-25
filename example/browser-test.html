@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mai Lang Parser - Browser Test</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
 
         /* Tab navigation styles */
         .tab-nav {
@@ -47,7 +56,7 @@
             background: white;
             padding: 25px;
             border-radius: 0 0 8px 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
 
@@ -152,6 +161,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1 class="main-title">Mai Lang Parser - Browser Test</h1>
@@ -169,10 +179,7 @@
             <h2>基础解析测试</h2>
             <div class="test-section">
                 <label>输入代码:</label>
-                <textarea id="basicCode">
-VARIABLE: x := 5 + 3, y := x * 2
-RETURN y
-                </textarea>
+                <textarea id="basicCode"></textarea>
                 <button onclick="testBasicParse()">测试解析</button>
                 <div id="basicOutput" class="output"></div>
             </div>
@@ -182,12 +189,7 @@ RETURN y
             <h2>金融指标测试</h2>
             <div class="test-section">
                 <label>输入代码:</label>
-                <textarea id="financialCode">
-MA5 := MA(C, 5)
-MA10 := MA(C, 10)
-CROSSOVER := CROSS(MA5, MA10)
-RETURN CROSSOVER
-                </textarea>
+                <textarea id="financialCode"></textarea>
                 <button onclick="testFinancial()">测试金融指标</button>
                 <div id="financialOutput" class="output"></div>
             </div>
@@ -197,16 +199,7 @@ RETURN CROSSOVER
             <h2>IR 输出测试</h2>
             <div class="test-section">
                 <label>输入代码:</label>
-                <textarea id="irCode">
-VARIABLE: x := 0, CNT := 0
-IF CNT <= 1 THEN BEGIN
-  x := x + 10
-END
-ELSE BEGIN
-  x := x + 100
-END
-RETURN x
-                </textarea>
+                <textarea id="irCode"></textarea>
                 <button onclick="testIR()">测试IR输出</button>
                 <div id="irOutput" class="output"></div>
             </div>
@@ -216,10 +209,7 @@ RETURN x
             <h2>错误处理测试</h2>
             <div class="test-section">
                 <label>输入代码:</label>
-                <textarea id="errorCode">
-VARIABLE: x := 5 / 0
-RETURN x
-                </textarea>
+                <textarea id="errorCode"></textarea>
                 <button onclick="testError()">测试错误处理</button>
                 <div id="errorOutput" class="output"></div>
             </div>
@@ -227,7 +217,7 @@ RETURN x
     </div>
 
     <!-- 包含打包后的 Mai Lang Parser -->
-    <script src="../dist/browser/mailang.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mailang.js/dist/browser/mailang.umd.min.js"></script>
 
     <script>
         // Tab switching functionality
@@ -248,6 +238,7 @@ RETURN x
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
         }
+
         function showOutput(elementId, content, isError = false) {
             const element = document.getElementById(elementId);
             element.innerHTML = content;
@@ -327,7 +318,7 @@ RETURN x
                 const executor = new mailang.MaiExecutor(code);
 
                 // 尝试执行会出错的代码
-                const marketData = { O: 100, H: 105, L: 98, C: 102 };
+                const marketData = {O: 100, H: 105, L: 98, C: 102};
                 const result = executor.execute(marketData);
 
                 showOutput('errorOutput', `
@@ -346,11 +337,41 @@ RETURN x
         }
 
         // 页面加载时自动运行基础测试
-        window.onload = function() {
+        window.onload = function () {
+            // 设置默认代码示例
+            setDefaultValues();
+
             console.log('mailang loaded:', typeof mailang);
             console.log('Available functions:', Object.keys(mailang));
             testBasicParse();
         };
+
+        function setDefaultValues() {
+            // 基础解析测试默认代码
+            document.getElementById('basicCode').value = `VARIABLE: x := 5 + 3, y := x * 2
+RETURN y`;
+
+            // 金融指标测试默认代码
+            document.getElementById('financialCode').value = `MA5 := MA(C, 5)
+MA10 := MA(C, 10)
+CROSSOVER := CROSS(MA5, MA10)
+RETURN CROSSOVER`;
+
+            // IR输出测试默认代码
+            document.getElementById('irCode').value = `VARIABLE: x := 0, CNT := 0
+IF CNT <= 1 THEN BEGIN
+  x := x + 10
+END
+ELSE BEGIN
+  x := x + 100
+END
+RETURN x`;
+
+            // 错误处理测试默认代码
+            document.getElementById('errorCode').value = `VARIABLE: x := 5 / 0
+RETURN x`;
+        }
     </script>
 </body>
+
 </html>

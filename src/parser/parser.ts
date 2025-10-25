@@ -293,6 +293,7 @@ const parser = new MaiParser();
 
 // Helper function to parse input
 export function parse(inputText: string) {
+  inputText = inputText + '\n';
   const lexResult = MaiLexer.tokenize(inputText);
 
   if (lexResult.errors.length > 0) {
