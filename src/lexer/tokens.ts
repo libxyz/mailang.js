@@ -68,12 +68,4 @@ export const MaiLexer = new Lexer(allTokens, {
 });
 
 // Export keywords for use in other modules
-export const KEYWORDS = [
-  Token.VARIABLE,
-  Token.IF,
-  Token.THEN,
-  Token.ELSE,
-  Token.BEGIN,
-  Token.END,
-  Token.RETURN,
-];
+export const KEYWORDS = [Token.VARIABLE, Token.IF, Token.THEN, Token.ELSE, Token.BEGIN, Token.END, Token.RETURN];
