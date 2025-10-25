@@ -194,6 +194,81 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
+
+        /* Help section styles */
+        .help-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .help-section h4 {
+            color: #495057;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .function-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .function-item {
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .function-item strong {
+            color: #007bff;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .function-item em {
+            color: #28a745;
+            font-style: normal;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .example-box {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #28a745;
+            margin-top: 10px;
+        }
+
+        .example-box pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 8px 0;
+        }
+
+        .help-section ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .help-section li {
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        .help-section p {
+            margin-bottom: 10px;
+            color: #495057;
+            line-height: 1.5;
+        }
     </style>
 
     <!-- 包含打包后的 Mai Lang Parser -->
@@ -210,6 +285,7 @@
             <button class="tab-button" onclick="showTab('ast')">AST解析测试</button>
             <button class="tab-button" onclick="showTab('ir')">IR 输出测试</button>
             <button class="tab-button" onclick="showTab('error')">错误处理测试</button>
+            <button class="tab-button" onclick="showTab('help')">帮助文档</button>
         </div>
 
         <!-- Tab Content -->
@@ -223,6 +299,16 @@
                 </div>
                 <textarea id="candleData" rows="6"></textarea>
                 <div id="candleInfo" class="output"></div>
+            </div>
+            <div class="test-section candle-data-section">
+                <label>用户自定义参数</label>
+                <div class="candle-data-format">格式: 参数名=参数值 - 每行一个参数</div>
+                <div class="candle-data-actions">
+                    <button onclick="loadSampleParameters()">加载示例参数</button>
+                    <button onclick="clearParameters()">清空参数</button>
+                </div>
+                <textarea id="userParams" rows="4"></textarea>
+                <div id="paramInfo" class="output"></div>
             </div>
             <div class="test-section">
                 <label>输入代码:</label>
@@ -256,6 +342,118 @@
                 <textarea id="errorCode"></textarea>
                 <button onclick="testError()">测试错误处理</button>
                 <div id="errorOutput" class="output"></div>
+            </div>
+        </div>
+
+        <div id="help" class="tab-content">
+            <div class="test-section">
+                <h3>Mai语言帮助文档</h3>
+
+                <div class="help-section">
+                    <h4>内置函数</h4>
+                    <div class="function-list">
+                        <div class="function-item">
+                            <strong>MA(data, period)</strong> - 移动平均线
+                            <br>计算数据的移动平均值
+                            <br><em>示例: MA5 := MA(C, 5)</em>
+                        </div>
+
+                        <div class="function-item">
+                            <strong>SMA(data, period)</strong> - 简单移动平均线
+                            <br>MA函数的别名
+                            <br><em>示例: SMA5 := SMA(C, 5)</em>
+                        </div>
+
+                        <div class="function-item">
+                            <strong>CROSS(a, b)</strong> - 金叉检测
+                            <br>检测a是否上穿b（前一期a<b且当期a>b）
+                                <br><em>示例: CROSSOVER := CROSS(MA5, MA10)</em>
+                        </div>
+
+                        <div class="function-item">
+                            <strong>CROSSDOWN(a, b)</strong> - 死叉检测
+                            <br>检测a是否下穿b（前一期a>b且当期a<b） <br><em>示例: CROSSDOWN := CROSSDOWN(MA5, MA10)</em>
+                        </div>
+
+                        <div class="function-item">
+                            <strong>IFELSE(condition, true_value, false_value)</strong> - 条件选择
+                            <br>根据条件返回不同的值
+                            <br><em>示例: RESULT := IFELSE(C > O, 1, -1)</em>
+                        </div>
+
+                        <div class="function-item">
+                            <strong>MAX(a, b, ...)</strong> - 最大值
+                            <br>返回多个值中的最大值
+                            <br><em>示例: MAX_PRICE := MAX(H, C)</em>
+                        </div>
+
+                        <div class="function-item">
+                            <strong>MIN(a, b, ...)</strong> - 最小值
+                            <br>返回多个值中的最小值
+                            <br><em>示例: MIN_PRICE := MIN(L, C)</em>
+                        </div>
+
+                        <div class="function-item">
+                            <strong>SUM(a, b, ...)</strong> - 求和
+                            <br>返回多个值的和
+                            <br><em>示例: TOTAL := SUM(C, O, H, L)</em>
+                        </div>
+
+                        <div class="function-item">
+                            <strong>PRINT(...)</strong> - 打印输出
+                            <br>将值输出到控制台
+                            <br><em>示例: PRINT("当前价格:", C)</em>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h4>市场数据关键字</h4>
+                    <ul>
+                        <li><strong>O</strong> - 开盘价 (Open)</li>
+                        <li><strong>H</strong> - 最高价 (High)</li>
+                        <li><strong>L</strong> - 最低价 (Low)</li>
+                        <li><strong>C</strong> - 收盘价 (Close)</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h4>运算符</h4>
+                    <ul>
+                        <li><strong>算术运算符:</strong> +, -, *, /</li>
+                        <li><strong>比较运算符:</strong> >, <,>=, <=,=, <>
+                        </li>
+                        <li><strong>逻辑运算符:</strong> &&, ||</li>
+                        <li><strong>赋值运算符:</strong> := (普通赋值), : (显示赋值)</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h4>用户自定义参数</h4>
+                    <p>您可以在"用户自定义参数"区域定义全局变量，这些变量可以在Mai代码中直接使用。</p>
+                    <div class="example-box">
+                        <strong>示例:</strong>
+                        <br>在参数区域输入:
+                        <pre>SHORT_PERIOD=5
+                            LONG_PERIOD=20
+                            THRESHOLD=2.5</pre>
+                        <br>在代码中使用:
+                        <pre>MA_SHORT := MA(C, SHORT_PERIOD)
+                            MA_LONG := MA(C, LONG_PERIOD)
+                            SIGNAL := IFELSE(MA_SHORT > MA_LONG + THRESHOLD, 1, 0)</pre>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h4>控制流</h4>
+                    <p>支持IF-THEN-ELSE条件语句:</p>
+                    <pre>IF 条件 THEN BEGIN
+                        // 条件为真时执行的代码
+                        END
+                        ELSE BEGIN
+                        // 条件为假时执行的代码
+                        END</pre>
+                </div>
             </div>
         </div>
     </div>
@@ -387,10 +585,12 @@
 
             // 加载默认示例数据并运行测试
             loadSampleCandleData();
+            loadSampleParameters();
             testRun();
 
             // 添加K线数据输入监听
             document.getElementById('candleData').addEventListener('input', updateCandleInfo);
+            document.getElementById('userParams').addEventListener('input', updateParameterInfo);
         };
 
         function parseCandleData(candleText) {
@@ -429,6 +629,84 @@
             }
 
             return candles;
+        }
+
+        function parseUserParameters(paramText) {
+            if (!paramText || !paramText.trim()) {
+                return [];
+            }
+
+            const lines = paramText.trim().split('\n').filter(line => line.trim());
+            const parameters = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                const equalIndex = line.indexOf('=');
+                if (equalIndex === -1) {
+                    throw new Error(`第 ${i + 1} 行参数格式错误: ${line}`);
+                }
+
+                const name = line.substring(0, equalIndex).trim();
+                const valueStr = line.substring(equalIndex + 1).trim();
+
+                if (!name) {
+                    throw new Error(`第 ${i + 1} 行参数名不能为空`);
+                }
+
+                // 尝试解析为数字，如果失败则作为字符串
+                const numValue = parseFloat(valueStr);
+                const value = isNaN(numValue) ? valueStr : numValue;
+
+                parameters.push({name, value});
+            }
+
+            return parameters;
+        }
+
+        function loadSampleParameters() {
+            const sampleParams = [
+                "SHORT_PERIOD=5",
+                "LONG_PERIOD=20",
+                "THRESHOLD=2.5"
+            ];
+
+            document.getElementById('userParams').value = sampleParams.join('\n');
+            updateParameterInfo();
+        }
+
+        function clearParameters() {
+            document.getElementById('userParams').value = '';
+            document.getElementById('paramInfo').innerHTML = '';
+        }
+
+        function updateParameterInfo() {
+            try {
+                const paramText = document.getElementById('userParams').value;
+                if (!paramText.trim()) {
+                    document.getElementById('paramInfo').innerHTML = '';
+                    return;
+                }
+
+                const parameters = parseUserParameters(paramText);
+                if (parameters.length === 0) {
+                    document.getElementById('paramInfo').innerHTML = '';
+                    return;
+                }
+
+                const paramList = parameters.map(p => `${p.name}=${p.value}`).join(', ');
+
+                document.getElementById('paramInfo').innerHTML = `
+                    <strong>参数统计</strong><br>
+                    总参数数: ${parameters.length} 个<br>
+                    参数列表: ${paramList}
+                `;
+                document.getElementById('paramInfo').className = 'output success';
+            } catch (error) {
+                document.getElementById('paramInfo').innerHTML = `
+                    <strong>参数格式错误:</strong><br>${error.message}
+                `;
+                document.getElementById('paramInfo').className = 'output error';
+            }
         }
 
         function loadSampleCandleData() {
@@ -490,6 +768,7 @@
             try {
                 const code = document.getElementById('runCode').value;
                 const candleText = document.getElementById('candleData').value;
+                const paramText = document.getElementById('userParams').value;
 
                 if (!candleText.trim()) {
                     showOutput('runOutput', '请先输入K线数据', true);
@@ -497,9 +776,19 @@
                 }
 
                 const candles = parseCandleData(candleText);
+                const userParameters = parseUserParameters(paramText);
                 const results = [];
+                let printOutput = []; // 存储PRINT输出的数组
 
-                const executor = new mailang.MaiExecutor(code);
+                // 创建执行器时传入用户参数和logger
+                const options = {
+                    userGlobals: userParameters,
+                    logger: (...args) => {
+                        printOutput.push(args.join(' '));
+                    }
+                };
+
+                const executor = new mailang.MaiVM(code, options);
                 // 对每根K线执行代码
                 for (let i = 0; i < candles.length; i++) {
                     const candle = candles[i];
@@ -507,21 +796,35 @@
 
                     results.push({
                         timestamp: candle.timestamp,
-                        input: candle,
-                        output: result.output,
-                        variables: Object.fromEntries(result.globalVars)
+                        output: result.output
+                        // 移除variables字段，不再显示vars
                     });
                 }
 
                 // 显示结果概览
+                const paramInfo = userParameters.length > 0
+                    ? `用户参数: ${userParameters.map(p => `${p.name}=${p.value}`).join(', ')}\n`
+                    : '';
+
                 const summary = results.map(r =>
-                    `${r.timestamp}: 输出=${JSON.stringify(r.output)} 变量=${JSON.stringify(r.variables)}`
+                    `${r.timestamp}: 输出=${JSON.stringify(r.output)}`
                 ).join('\n');
 
-                showOutput('runOutput', `
+                // 构建最终输出，包含PRINT输出和程序输出
+                let finalOutput = `
                     <strong>运行成功! 共处理 ${results.length} 根K线</strong><br>
-                    <pre>${summary}</pre>
-                `);
+                    ${paramInfo ? `<strong>${paramInfo}</strong>` : ''}
+                `;
+
+                // 如果有PRINT输出，显示它们
+                if (printOutput.length > 0) {
+                    finalOutput += `<strong>PRINT输出:</strong><pre>${printOutput.join('\n')}</pre><br>`;
+                }
+
+                // 显示程序输出
+                finalOutput += `<strong>程序输出:</strong><pre>${summary}</pre>`;
+
+                showOutput('runOutput', finalOutput);
 
             } catch (error) {
                 showOutput('runOutput', `
@@ -532,10 +835,18 @@
         }
 
         function setDefaultValues() {
-            // 运行测试默认代码
-            document.getElementById('runCode').value = `MA5 := MA(C, 5)
-MA10 := MA(C, 10)
-CROSSOVER : CROSS(MA5, MA10)`;
+            // 运行测试默认代码 - 使用用户参数
+            document.getElementById('runCode').value = `MA_SHORT := MA(C, SHORT_PERIOD)
+MA_LONG := MA(C, LONG_PERIOD)
+PRICE_CHANGE := C - O
+SIGNAL := IFF(PRICE_CHANGE > THRESHOLD, 1, IFF(PRICE_CHANGE < -THRESHOLD, -1, 0))
+CROSSOVER : CROSS(MA_SHORT, MA_LONG)
+
+// 打印一些调试信息
+PRINT("短周期均线:", MA_SHORT)
+PRINT("长周期均线:", MA_LONG)
+PRINT("价格变化:", PRICE_CHANGE)
+PRINT("信号:", SIGNAL)`;
 
             // AST解析测试默认代码
             document.getElementById('basicCode').value = `VARIABLE: x := 5 + 3, y := x * 2`;

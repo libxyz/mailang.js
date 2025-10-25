@@ -107,6 +107,7 @@ F<[any, any, any]>(
   },
   {
     validateInput: typia.createAssert<[any, any, any]>(),
+    alias: ['IFF'],
   }
 );
 

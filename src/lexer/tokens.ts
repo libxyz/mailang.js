@@ -13,13 +13,13 @@ const tokenSpecs = [
   { name: 'StringLiteral', pattern: /"([^"\\]|\\.)*"/ },
 
   // Keywords
-  { name: 'VARIABLE', pattern: /VARIABLE/ },
-  { name: 'IF', pattern: /IF/ },
-  { name: 'THEN', pattern: /THEN/ },
-  { name: 'ELSE', pattern: /ELSE/ },
-  { name: 'BEGIN', pattern: /BEGIN/ },
-  { name: 'END', pattern: /END/ },
-  { name: 'RETURN', pattern: /RETURN/ },
+  { name: 'VARIABLE', pattern: /\bVARIABLE\b/ },
+  { name: 'IF', pattern: /\bIF\b/ },
+  { name: 'THEN', pattern: /\bTHEN\b/ },
+  { name: 'ELSE', pattern: /\bELSE\b/ },
+  { name: 'BEGIN', pattern: /\bBEGIN\b/ },
+  { name: 'END', pattern: /\bEND\b/ },
+  { name: 'RETURN', pattern: /\bRETURN\b/ },
 
   // Identifiers
   { name: 'Identifier', pattern: /[a-zA-Z_][a-zA-Z0-9_]*/ },

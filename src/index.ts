@@ -15,5 +15,5 @@ export function parseMai(sourceCode: string): ParseResult {
 export {
   ExecutionResult,
   ExecutionError,
-  MaiVM as MaiExecutor, // Now uses IR internally for backward compatibility
+  MaiVM, // Now uses IR internally for backward compatibility
 } from './interpreter';

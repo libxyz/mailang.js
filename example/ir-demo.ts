@@ -1,4 +1,4 @@
-import { MaiExecutor } from '../src/index';
+import { MaiVM } from '../src/index';
 
 const script = `
 VARIABLE: x := 0, CNT := 0
@@ -26,5 +26,5 @@ PRINT("MA3:", MA3, "MA5", MA5, "MA3+MA5", MA3 + MA5, "\n");
 K: MA3;
 `;
 
-const engine = new MaiExecutor(script.trim());
+const engine = new MaiVM(script.trim());
 console.log(engine.dumpIR());
