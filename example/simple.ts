@@ -4,14 +4,13 @@ import { MaiError } from '../src/interpreter';
 const script = `
 VARIABLE: x := 0, CNT := 1;
 CNT := CNT + 1;
-
-a := IFELSE(CNT <= 3, -10, 10);
-PRINT("a", a, "CNT", CNT);
+pre_cnt := REF(CNT, 1)
+PRINT("Pre CNT", pre_cnt, "CNT", CNT);
 
 IF CNT <= 1 THEN BEGIN
   x := x + 10;
   PRINT("Inside IF [g] x", x, "CNT", CNT);
-END 
+END
 ELSE IF CNT <= 2 THEN BEGIN
   x := x + 100;
   PRINT("Inside ELSE IF [g] x", x, "CNT", CNT);
@@ -33,7 +32,7 @@ try {
   const engine = new mai.MaiVM(script.trim(), {
     userGlobals: [{ name: 'T', value: 0 }],
   });
-  
+
   // console.log(engine.dumpIR());
   // console.log('Generated IR Program:', JSON.stringify(engine.getIRProgram(), null, 2));
   let result = engine.execute({

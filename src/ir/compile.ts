@@ -12,9 +12,8 @@ import {
 import { MaiError } from '../interpreter/err';
 import { KEYWORDS } from '../lexer/tokens';
 
-const PROTECTED_WORDS = new Set<string>(['O', 'H', 'L', 'C'].concat(KEYWORDS.map(token => token.name)));
-
-const DEFAULT_GLOBALS = ['O', 'H', 'L', 'C'];
+const DEFAULT_GLOBALS = ['O', 'H', 'L', 'C', 'V', 'OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOL'];
+const PROTECTED_WORDS = new Set<string>(DEFAULT_GLOBALS.concat(KEYWORDS.map(token => token.name)));
 
 export class IRGenerator {
   private ctx!: IRGeneratorContext; // Use definite assignment assertion

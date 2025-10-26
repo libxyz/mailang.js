@@ -272,7 +272,7 @@
     </style>
 
     <!-- 包含打包后的 Mai Lang Parser -->
-    <script src="../dist/browser/mailang.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mailang.js@0.1.4/dist/browser/mailang.umd.min.js"></script>
 </head>
 
 <body>
@@ -372,7 +372,7 @@
 
                         <div class="function-item">
                             <strong>CROSSDOWN(a, b)</strong> - 死叉检测
-                            <br>检测a是否下穿b（前一期a>b且当期a<b） <br><em>示例: CROSSDOWN := CROSSDOWN(MA5, MA10)</em>
+                            <br>检测a是否下穿b（前一期a>b且当期a<b��� <br><em>示例: CROSSDOWN := CROSSDOWN(MA5, MA10)</em>
                         </div>
 
                         <div class="function-item">
@@ -506,7 +506,7 @@
                 const result = mailang.parseMai(code);
 
                 // 创建执行器
-                const executor = new mailang.MaiExecutor(code);
+                const executor = new mailang.MaiVM(code);
 
                 // 模拟市场数据
                 const marketData = {
@@ -536,7 +536,7 @@
         function testIR() {
             try {
                 const code = document.getElementById('irCode').value;
-                const executor = new mailang.MaiExecutor(code);
+                const executor = new mailang.MaiVM(code);
                 const irOutput = executor.dumpIR();
 
                 showOutput('irOutput', `
@@ -554,7 +554,7 @@
         function testError() {
             try {
                 const code = document.getElementById('errorCode').value;
-                const executor = new mailang.MaiExecutor(code);
+                const executor = new mailang.MaiVM(code);
 
                 // 尝试执行会出错的代码
                 const marketData = {O: 100, H: 105, L: 98, C: 102};

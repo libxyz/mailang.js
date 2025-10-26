@@ -1,6 +1,6 @@
 {
   "name": "mailang.js",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Mai language parser and executor for financial technical analysis - supports AST parsing and IR-based execution",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

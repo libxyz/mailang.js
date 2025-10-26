@@ -17,6 +17,21 @@ export interface MarketData {
   [key: string]: number | null; // Additional market data fields
 }
 
+function marketDataAlias(k: keyof MarketData): string | undefined {
+  switch (k) {
+    case 'O':
+      return 'OPEN';
+    case 'H':
+      return 'HIGH';
+    case 'L':
+      return 'LOW';
+    case 'C':
+      return 'CLOSE';
+    case 'V':
+      return 'VOL';
+  }
+}
+
 export interface ExecutionResult {
   output: Record<string, any>;
   vars: Map<string | symbol, any>;
@@ -133,6 +148,13 @@ export class Interpreter {
       const index = this.program.gLookup.get(key);
       if (index !== undefined) {
         this.ctx.globals[index] = value;
+        const alias = marketDataAlias(key);
+        if (alias) {
+          const aliasIndex = this.program.gLookup.get(alias);
+          if (aliasIndex !== undefined) {
+            this.ctx.globals[aliasIndex] = value;
+          }
+        }
       }
     }
 

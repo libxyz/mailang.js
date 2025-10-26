@@ -1,5 +1,5 @@
 import { ExecFunc, ExecCtx } from '../utils';
-import { StatsRingBuf } from '../utils/ring-buffer';
+import { RingBuf, StatsRingBuf } from '../utils/ring-buffer';
 import typia from 'typia';
 
 type Nullable<T> = T | null;
@@ -17,6 +17,9 @@ function F<I = any[], O = number | null>(
 ): ExecFunc {
   if (registry.has(name)) {
     throw new Error(`Function ${name} is already registered.`);
+  }
+  if (options?.alias?.some(alias => registry.has(alias))) {
+    throw new Error(`One of the aliases for function ${name} is already registered.`);
   }
 
   const validateInput = options?.validateInput ?? identity;
@@ -36,18 +39,11 @@ F<[number, number]>(
   (args, context) => {
     const data = args[0];
     const period = args[1];
-    // Initialize or get existing ring buffer from context state
-    if (!context.state?.maBuffer) {
-      context.state.maBuffer = new StatsRingBuf(period);
-    }
-    const buffer = context.state.maBuffer as StatsRingBuf;
-    // Add new data point to buffer
+    const buffer = useStatsRingBuf(context, period, 'maBuffer');
     buffer.push(data);
-    // Return null if we don't have enough data yet
     if (!buffer.full()) {
       return null;
     }
-    // Use RingBuffer's built-in average method
     return buffer.avg();
   },
   {
@@ -115,6 +111,43 @@ F('PRINT', (args, context) => context.log(...args));
 F('MAX', args => Math.max(...args), opts);
 F('MIN', args => Math.min(...args), opts);
 F('SUM', args => args.reduce((acc, val) => acc + val, 0), opts);
+
+F<[Nullable<number>, number]>(
+  'REF',
+  (args, context) => {
+    const data = args[0];
+    const period = args[1];
+
+    const buffer = useRingBuf<Nullable<number>>(context, period, 'refBuffer');
+    const ret = buffer.get(buffer.len() - period) ?? null;
+    // Add new data point to buffer
+    buffer.push(data);
+    // Return null if we don't have enough data yet
+    if (!buffer.full()) {
+      return null;
+    }
+    return ret;
+  },
+  {
+    validateInput: typia.createAssert<[Nullable<number>, number]>(),
+  }
+);
+
+// === Helper Functions ===
+
+function useRingBuf<T>(context: ExecCtx, period: number, key: string): RingBuf<T> {
+  if (!context.state[key]) {
+    context.state[key] = new RingBuf<T>(period);
+  }
+  return context.state[key] as RingBuf<T>;
+}
+
+function useStatsRingBuf(context: ExecCtx, period: number, key: string): StatsRingBuf {
+  if (!context.state[key]) {
+    context.state[key] = new StatsRingBuf(period);
+  }
+  return context.state[key] as StatsRingBuf;
+}
 
 function isNullOrUndefined(value: any): value is null | undefined {
   return value === null || value === undefined;
