@@ -6,6 +6,7 @@ import { IROpcode } from '../ir/types';
 
 describe('IR (Intermediate Representation)', () => {
   const sampleMarketData: MarketData = {
+    T: 1609459200, // Timestamp (example: 2021-01-01 00:00:00 UTC)
     O: 100,
     H: 105,
     L: 98,
