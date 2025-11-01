@@ -2,7 +2,7 @@ import { IRGenerator } from '../ir/compile';
 import { parseMai } from '..';
 import { Program } from '../ast/types';
 import { IRProgram, IRFunction, IRInstruction, IROpcode } from '../ir/types';
-import { funcRegistry } from './functions';
+import { registry } from './funcs';
 import { MaiError, newError } from './err';
 import { ErrorType } from '../ast/enums';
 import { dump } from '../ir/helper';
@@ -10,6 +10,7 @@ import { dump } from '../ir/helper';
 const DEBUG = false;
 
 export interface MarketData {
+  T: number; // Timestamp
   O: number; // Open price
   H: number; // High price
   L: number; // Low price
@@ -40,18 +41,15 @@ export interface ExecutionResult {
 }
 
 // Execution context utilities
-export interface ExecCtx {
-  vars: Map<string | symbol, any>;
-  globalVars: Map<string, any>;
-  funcs: Map<string, any>;
+export interface CallFuncCtx {
+  marketData: MarketData;
   state: Record<string, any>;
-  output: Record<string, any>;
   log: (...args: any[]) => void;
 }
 
 export interface ExecFunc<TArgs = any, Output = any> {
   name: string;
-  execute: (args: TArgs, context: ExecCtx) => Output;
+  execute: (args: TArgs, context: CallFuncCtx) => Output;
 }
 
 export interface VMOptions {
@@ -108,6 +106,7 @@ export class Interpreter {
   private round: number = 0;
   private localStates: Map<number, Record<string, any>> = new Map();
   private options?: VMOptions;
+  private currentMarketData?: MarketData;
 
   maxStackSize: number = 1000; // Limit stack size to prevent overflow
 
@@ -142,6 +141,7 @@ export class Interpreter {
     this.ctx.output = {};
     this.ctx.pc = 0;
     this.round++;
+    this.currentMarketData = marketData;
 
     // Load market data into globals (only overwrite market data keys)
     for (const [key, value] of Object.entries(marketData)) {
@@ -340,7 +340,7 @@ export class Interpreter {
           args.unshift(this.pop());
         }
 
-        const builtinFunc = funcRegistry.get(name);
+        const builtinFunc = registry.get(name);
         if (!builtinFunc) {
           throw this.newErr(ErrorType.INVALID_FUNCTION_CALL, `Cannot call non-function`);
         }
@@ -352,11 +352,8 @@ export class Interpreter {
         }
 
         const result = builtinFunc.execute(args, {
-          vars: new Map(),
-          globalVars: new Map(Object.entries(this.ctx.globals)),
-          funcs: funcRegistry,
           state,
-          output: this.ctx.output,
+          marketData: this.getCurrentMarketData(),
           log: this.options?.logger || console.log,
         });
 
@@ -485,25 +482,20 @@ export class Interpreter {
     }
     return map;
   }
-}
 
-// === Helpers ===
-
-export function getVar(ctx: ExecCtx, name: string | symbol): any {
-  if (ctx.vars.has(name)) {
-    return ctx.vars.get(name);
+  private getCurrentMarketData(): MarketData {
+    if (!this.currentMarketData) {
+      throw new Error('No market data available');
+    }
+    return this.currentMarketData;
   }
-  if (typeof name === 'string' && ctx.globalVars.has(name)) {
-    return ctx.globalVars.get(name);
-  }
-  return undefined;
 }
 
 /**
  * Execute Mai source code using IR (Intermediate Representation)
  * This replaces the legacy AST walker with a more efficient IR-based execution
  */
-export function executeMai(sourceCode: string, marketData: MarketData = { O: 0, H: 0, L: 0, C: 0 }): ExecutionResult {
+export function executeMai(sourceCode: string, marketData: MarketData): ExecutionResult {
   const parseResult = parseMai(sourceCode);
   // Generate IR from AST with debug information enabled for better error reporting
   const irGenerator = new IRGenerator({

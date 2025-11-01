@@ -60,6 +60,19 @@ export class RingBuf<T> {
   }
 
   /**
+   * Set the element at the specified index
+   * Index 0 is the oldest element, index size-1 is the newest
+   */
+  set(index: number, value: T): void {
+    if (index < 0 || index >= this.size) {
+      return;
+    }
+
+    const actualIndex = (this.head + index) % this.capacity;
+    this.buffer[actualIndex] = value;
+  }
+
+  /**
    * Get the most recently added element
    */
   last(): T | undefined {

@@ -2,6 +2,7 @@ import { executeMai, MaiVM, MarketData } from '../interpreter';
 
 describe('Mai Executor', () => {
   const sampleMarketData: MarketData = {
+    T: 1609459200, // Timestamp (example: 2021-01-01 00:00:00 UTC)
     O: 100,
     H: 105,
     L: 98,
@@ -362,6 +363,7 @@ describe('Mai Executor', () => {
 
     test('should work with different market data', () => {
       const customMarketData: MarketData = {
+        T: 1609545600, // Different timestamp
         O: 50,
         H: 55,
         L: 48,

@@ -8,16 +8,16 @@ interface ExtendedMarketData extends MarketData {
 describe('Multi-Candle Interpreter Tests', () => {
   // 模拟多根K线数据
   const candleSeries: ExtendedMarketData[] = [
-    { O: 100, H: 105, L: 98, C: 102, volume: 1000000 }, // K线1
-    { O: 102, H: 108, L: 101, C: 106, volume: 1100000 }, // K线2
-    { O: 106, H: 110, L: 104, C: 107, volume: 1200000 }, // K线3
-    { O: 107, H: 112, L: 105, C: 109, volume: 1300000 }, // K线4
-    { O: 109, H: 115, L: 108, C: 113, volume: 1400000 }, // K线5
-    { O: 113, H: 118, L: 111, C: 115, volume: 1500000 }, // K线6
-    { O: 115, H: 120, L: 114, C: 117, volume: 1600000 }, // K线7
-    { O: 117, H: 122, L: 116, C: 119, volume: 1700000 }, // K线8
-    { O: 119, H: 125, L: 118, C: 121, volume: 1800000 }, // K线9
-    { O: 121, H: 127, L: 120, C: 124, volume: 1900000 }, // K线10
+    { T: 1609459200, O: 100, H: 105, L: 98, C: 102, volume: 1000000 }, // K线1
+    { T: 1609462800, O: 102, H: 108, L: 101, C: 106, volume: 1100000 }, // K线2
+    { T: 1609466400, O: 106, H: 110, L: 104, C: 107, volume: 1200000 }, // K线3
+    { T: 1609470000, O: 107, H: 112, L: 105, C: 109, volume: 1300000 }, // K线4
+    { T: 1609473600, O: 109, H: 115, L: 108, C: 113, volume: 1400000 }, // K线5
+    { T: 1609477200, O: 113, H: 118, L: 111, C: 115, volume: 1500000 }, // K线6
+    { T: 1609480800, O: 115, H: 120, L: 114, C: 117, volume: 1600000 }, // K线7
+    { T: 1609484400, O: 117, H: 122, L: 116, C: 119, volume: 1700000 }, // K线8
+    { T: 1609488000, O: 119, H: 125, L: 118, C: 121, volume: 1800000 }, // K线9
+    { T: 1609491600, O: 121, H: 127, L: 120, C: 124, volume: 1900000 }, // K线10
   ];
 
   describe('Global Variables State Management', () => {
@@ -32,7 +32,7 @@ describe('Multi-Candle Interpreter Tests', () => {
 
       // 执行多根K线
       const results = candleSeries.map(candle =>
-        executor.execute({ O: candle.O, H: candle.H, L: candle.L, C: candle.C })
+        executor.execute({ T: candle.T, O: candle.O, H: candle.H, L: candle.L, C: candle.C })
       );
 
       // 验证全局变量递增
@@ -72,7 +72,7 @@ describe('Multi-Candle Interpreter Tests', () => {
 
       // 执行多根K线
       const results = candleSeries.map(candle =>
-        executor.execute({ O: candle.O, H: candle.H, L: candle.L, C: candle.C })
+        executor.execute({ T: candle.T, O: candle.O, H: candle.H, L: candle.L, C: candle.C })
       );
 
       // 验证第一根K线
@@ -117,7 +117,7 @@ describe('Multi-Candle Interpreter Tests', () => {
 
       const executor = new MaiVM(code);
       const results = candleSeries.map(candle =>
-        executor.execute({ O: candle.O, H: candle.H, L: candle.L, C: candle.C })
+        executor.execute({ T: candle.T, O: candle.O, H: candle.H, L: candle.L, C: candle.C })
       );
 
       // 验证价格范围逐渐扩大
@@ -179,7 +179,7 @@ describe('Multi-Candle Interpreter Tests', () => {
 
       const executor = new MaiVM(code);
       const results = candleSeries.map(candle =>
-        executor.execute({ O: candle.O, H: candle.H, L: candle.L, C: candle.C })
+        executor.execute({ T: candle.T, O: candle.O, H: candle.H, L: candle.L, C: candle.C })
       );
 
       // 验证MA计算
@@ -208,7 +208,7 @@ describe('Multi-Candle Interpreter Tests', () => {
 
       const executor = new MaiVM(code);
       const results = candleSeries.map(candle =>
-        executor.execute({ O: candle.O, H: candle.H, L: candle.L, C: candle.C })
+        executor.execute({ T: candle.T, O: candle.O, H: candle.H, L: candle.L, C: candle.C })
       );
 
       // 验证不同周期的MA有不同的状态
@@ -235,7 +235,7 @@ describe('Multi-Candle Interpreter Tests', () => {
 
       const executor = new MaiVM(code);
       const results = candleSeries.map(candle =>
-        executor.execute({ O: candle.O, H: candle.H, L: candle.L, C: candle.C })
+        executor.execute({ T: candle.T, O: candle.O, H: candle.H, L: candle.L, C: candle.C })
       );
 
       // 第4根K线验证
@@ -256,7 +256,7 @@ describe('Multi-Candle Interpreter Tests', () => {
       // 执行前5根K线
       const firstBatch = candleSeries
         .slice(0, 5)
-        .map(candle => executor.execute({ O: candle.O, H: candle.H, L: candle.L, C: candle.C }));
+        .map(candle => executor.execute({ T: candle.T, O: candle.O, H: candle.H, L: candle.L, C: candle.C }));
 
       // 验证第5根K线的MA值
       expect(firstBatch[4].vars.get('current_ma')).toBeCloseTo(109.67, 2); // (107+109+113)/3
@@ -265,7 +265,7 @@ describe('Multi-Candle Interpreter Tests', () => {
       const newExecutor = new MaiVM(code);
       const secondBatch = candleSeries
         .slice(5, 8)
-        .map(candle => newExecutor.execute({ O: candle.O, H: candle.H, L: candle.L, C: candle.C }));
+        .map(candle => newExecutor.execute({ T: candle.T, O: candle.O, H: candle.H, L: candle.L, C: candle.C }));
 
       // 验证新的executor从空状态开始
       expect(secondBatch[0].vars.get('current_ma')).toBe(null); // 第一根K线数据不足
