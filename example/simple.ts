@@ -36,6 +36,7 @@ try {
   // console.log(engine.dumpIR());
   // console.log('Generated IR Program:', JSON.stringify(engine.getIRProgram(), null, 2));
   let result = engine.execute({
+    T: 0,
     O: 100,
     H: 110,
     L: 90,
@@ -43,6 +44,7 @@ try {
   });
 
   result = engine.execute({
+    T: 1,
     O: 106,
     H: 112,
     L: 95,
@@ -50,6 +52,7 @@ try {
   });
 
   result = engine.execute({
+    T: 2,
     O: 107,
     H: 115,
     L: 100,
@@ -57,6 +60,7 @@ try {
   });
 
   result = engine.execute({
+    T: 3,
     O: 109,
     H: 118,
     L: 102,
@@ -64,6 +68,7 @@ try {
   });
 
   result = engine.execute({
+    T: 4,
     O: 111,
     H: 120,
     L: 105,

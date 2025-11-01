@@ -2,7 +2,7 @@ import { IRGenerator } from '../ir/compile';
 import { parseMai } from '..';
 import { Program } from '../ast/types';
 import { IRProgram, IRFunction, IRInstruction, IROpcode } from '../ir/types';
-import { funcRegistry } from './functions';
+import { registry } from './funcs';
 import { MaiError, newError } from './err';
 import { ErrorType } from '../ast/enums';
 import { dump } from '../ir/helper';
@@ -41,15 +41,15 @@ export interface ExecutionResult {
 }
 
 // Execution context utilities
-export interface ExecFuncCtx {
-  marketTs: number;
+export interface CallFuncCtx {
+  marketData: MarketData;
   state: Record<string, any>;
   log: (...args: any[]) => void;
 }
 
 export interface ExecFunc<TArgs = any, Output = any> {
   name: string;
-  execute: (args: TArgs, context: ExecFuncCtx) => Output;
+  execute: (args: TArgs, context: CallFuncCtx) => Output;
 }
 
 export interface VMOptions {
@@ -106,7 +106,7 @@ export class Interpreter {
   private round: number = 0;
   private localStates: Map<number, Record<string, any>> = new Map();
   private options?: VMOptions;
-  private marketTs?: number;
+  private currentMarketData?: MarketData;
 
   maxStackSize: number = 1000; // Limit stack size to prevent overflow
 
@@ -141,6 +141,7 @@ export class Interpreter {
     this.ctx.output = {};
     this.ctx.pc = 0;
     this.round++;
+    this.currentMarketData = marketData;
 
     // Load market data into globals (only overwrite market data keys)
     for (const [key, value] of Object.entries(marketData)) {
@@ -156,7 +157,6 @@ export class Interpreter {
         }
       }
     }
-    this.marketTs = marketData.T;
 
     try {
       this.executeFunction(this.program.main);
@@ -340,7 +340,7 @@ export class Interpreter {
           args.unshift(this.pop());
         }
 
-        const builtinFunc = funcRegistry.get(name);
+        const builtinFunc = registry.get(name);
         if (!builtinFunc) {
           throw this.newErr(ErrorType.INVALID_FUNCTION_CALL, `Cannot call non-function`);
         }
@@ -353,7 +353,7 @@ export class Interpreter {
 
         const result = builtinFunc.execute(args, {
           state,
-          marketTs: this.marketTs!,
+          marketData: this.getCurrentMarketData(),
           log: this.options?.logger || console.log,
         });
 
@@ -481,6 +481,13 @@ export class Interpreter {
       }
     }
     return map;
+  }
+
+  private getCurrentMarketData(): MarketData {
+    if (!this.currentMarketData) {
+      throw new Error('No market data available');
+    }
+    return this.currentMarketData;
   }
 }
 
