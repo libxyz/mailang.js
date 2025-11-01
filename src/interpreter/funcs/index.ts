@@ -169,19 +169,22 @@ F<[Nullable<number>, number]>(
   'BACKSET',
   (args, context) => {
     const [condition, n] = args;
+    const key = `backset_${n}`;
 
-    if (!context.state.backsetBuffer) {
-      context.state.backsetBuffer = new RingBuf<number>(n + 1);
+    if (!context.state[key]) {
+      context.state[key] = new RingBuf<number>(n + 1);
     }
-    const buffer = context.state.backsetBuffer as RingBuf<number>;
+    const buffer = context.state[key] as RingBuf<number>;
 
-    // Push current condition
+    // Push current condition (0 or 1)
     buffer.push(condition ? 1 : 0);
 
-    // If condition is true, set back N periods to 1
+    // If condition is true, set the last N periods to 1 (going backward)
     if (condition) {
-      for (let i = 0; i <= n && i < buffer.len(); i++) {
-        buffer.set(buffer.len() - 1 - i, 1);
+      const startIdx = Math.max(0, buffer.len() - n - 1);
+      const endIdx = buffer.len() - 1;
+      for (let i = startIdx; i <= endIdx; i++) {
+        buffer.set(i, 1);
       }
     }
 
@@ -197,22 +200,29 @@ F<[Nullable<number>]>(
   'BARSLAST',
   (args, context) => {
     const [condition] = args;
-    const key = 'barslast_counter';
+    const key = 'barslast_state';
 
     if (!context.state[key]) {
-      context.state[key] = 0;
+      context.state[key] = { lastTrueBar: -1, currentBar: 0 };
     }
 
-    let counter = context.state[key] as number;
+    const state = context.state[key] as { lastTrueBar: number; currentBar: number };
+
+    // Increment current bar counter
+    state.currentBar++;
 
     if (condition) {
-      counter = 0;
-    } else {
-      counter++;
+      state.lastTrueBar = state.currentBar;
+      return 0; // 0 periods since last true
     }
 
-    context.state[key] = counter;
-    return counter;
+    // If we've never had a true condition, return null
+    if (state.lastTrueBar === -1) {
+      return null;
+    }
+
+    // Return periods since last true condition
+    return state.currentBar - state.lastTrueBar;
   },
   {
     validateInput: typia.createAssert<[Nullable<number>]>(),
@@ -460,20 +470,97 @@ F<[number, number, number]>(
     const [n, step, maxStep] = args;
     const key = `sar_${n}_${step}_${maxStep}`;
 
+    // Get market data for proper SAR calculation
+    const high = context.marketData?.H;
+    const low = context.marketData?.L;
+    const close = context.marketData?.C;
+
     if (!context.state[key]) {
       context.state[key] = {
         sar: 0,
         ep: 0,
         af: step,
         trend: 1, // 1 for up, -1 for down
+        prevHigh: high || 0,
+        prevLow: low || 0,
         initialized: false,
       };
     }
 
-    const state = context.state[key];
-    // This is a simplified SAR implementation
-    // Full implementation would require high/low data
-    return state.sar || 0;
+    const state = context.state[key] as {
+      sar: number;
+      ep: number;
+      af: number;
+      trend: number;
+      prevHigh: number;
+      prevLow: number;
+      initialized: boolean;
+    };
+
+    // Need high/low data for proper SAR calculation
+    if (high === undefined || low === undefined) {
+      return state.sar || close || 0;
+    }
+
+    if (!state.initialized) {
+      // Initialize SAR
+      if (state.trend === 1) {
+        state.sar = low; // Start SAR at lowest low for uptrend
+        state.ep = high; // Extreme point at highest high
+      } else {
+        state.sar = high; // Start SAR at highest high for downtrend
+        state.ep = low; // Extreme point at lowest low
+      }
+      state.initialized = true;
+      state.prevHigh = high;
+      state.prevLow = low;
+      return state.sar;
+    }
+
+    // Update extreme point and acceleration factor
+    if (state.trend === 1) {
+      // Uptrend
+      if (high > state.ep) {
+        state.ep = high;
+        state.af = Math.min(state.af + step, maxStep);
+      }
+      // Update SAR for uptrend
+      const newSar = state.sar + state.af * (state.ep - state.sar);
+
+      // Check for trend reversal
+      if (newSar > low) {
+        // Trend reversal to downtrend
+        state.trend = -1;
+        state.sar = state.ep; // Set SAR to highest high
+        state.ep = low; // New extreme point at lowest low
+        state.af = step; // Reset acceleration factor
+      } else {
+        state.sar = newSar;
+      }
+    } else {
+      // Downtrend
+      if (low < state.ep) {
+        state.ep = low;
+        state.af = Math.min(state.af + step, maxStep);
+      }
+      // Update SAR for downtrend
+      const newSar = state.sar + state.af * (state.ep - state.sar);
+
+      // Check for trend reversal
+      if (newSar < high) {
+        // Trend reversal to uptrend
+        state.trend = 1;
+        state.sar = state.ep; // Set SAR to lowest low
+        state.ep = high; // New extreme point at highest high
+        state.af = step; // Reset acceleration factor
+      } else {
+        state.sar = newSar;
+      }
+    }
+
+    state.prevHigh = high;
+    state.prevLow = low;
+    return state.sar;
   },
   {
     validateInput: typia.createAssert<[number, number, number]>(),
@@ -528,37 +615,6 @@ F<[Nullable<number>, number]>(
     }
 
     return sum;
-  },
-  {
-    validateInput: typia.createAssert<[Nullable<number>, number]>(),
-  }
-);
-
-// SUMBARS(X,A): Number of periods to sum X forward until sum exceeds A
-F<[Nullable<number>, number]>(
-  'SUMBARS',
-  (args, context) => {
-    const [x, a] = args;
-    const key = `sumbars_${a}`;
-
-    if (x === null) return null;
-
-    if (!context.state[key]) {
-      context.state[key] = { sum: 0, bars: 0 };
-    }
-
-    const state = context.state[key] as { sum: number; bars: number };
-    state.sum += x;
-    state.bars++;
-
-    if (state.sum >= a) {
-      const result = state.bars;
-      state.sum = 0;
-      state.bars = 0;
-      return result;
-    }
-
-    return null;
   },
   {
     validateInput: typia.createAssert<[Nullable<number>, number]>(),
